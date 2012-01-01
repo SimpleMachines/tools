@@ -21,6 +21,7 @@ initialize_inputs();
 $txt['smf_repair_settings'] = 'SMF 2.0 Settings Repair Tool';
 $txt['no_value'] = '<em style="font-weight: normal; color: red;">Value not found!</em>';
 $txt['default_value'] = 'Recommended value';
+$txt['other_possible_value'] = 'Other possible value';
 $txt['no_default_value'] = 'No recommended value';
 $txt['save_settings'] = 'Save Settings';
 $txt['restore_all_settings'] = 'Restore all settings';
@@ -570,11 +571,17 @@ function show_settings()
 					$suggested = guess_attachments_directories($item, $array_setting);
 
 					if (!empty($suggested))
+					{
 						echo '
-								<div style="font-size: smaller;">', $txt['default_value'], ': &quot;<strong><a href="javascript:void(0);" id="', $setting, $item, '_default" onclick="document.getElementById(\'', $setting, $item, '\').value = ', $suggested == '' ? '\'\';">' . $txt['recommend_blank'] : 'getInnerHTML(this);">' . $suggested, '</a></strong>&quot;.</div>',
-								$suggested == '' ? '' : '
+								<div style="font-size: smaller;">', $txt['default_value'], ': &quot;<strong><a href="javascript:void(0);" id="', $setting, $item, '_default" onclick="document.getElementById(\'', $setting, $item, '\').value = ', $suggested[0] == '' ? '\'\';">' . $txt['recommend_blank'] : 'getInnerHTML(this);">' . $suggested[0], '</a></strong>&quot;.</div>',
+								$suggested[0] == '' ? '' : '
 								<script type="text/javascript"><!-- // --><![CDATA[
 									resetSettings[settingsCounter++] = "' . $setting . $item . '"; // ]]></script>';
+
+						for ($i = 1; $i < count($suggested); $i++)
+							echo '
+								<div style="font-size: smaller;">', $txt['other_possible_value'], ': &quot;<strong><a href="javascript:void(0);" id="', $setting, $item, '_default" onclick="document.getElementById(\'', $setting, $item, '\').value = ', $suggested[$i] == '' ? '\'\';">' . $txt['recommend_blank'] : 'getInnerHTML(this);">' . $suggested[$i], '</a></strong>&quot;.</div>';
+					}
 					else
 						echo '
 								<div style="font-size: smaller;">', $txt['no_default_value'], '</div>';
@@ -667,16 +674,34 @@ function guess_attachments_directories($id, $array_setting)
 	}
 
 	// 1st guess: let's see if we can find a file...if there is at least one.
-	if (isset($usedDirs[$id]) || ($context['is_legacy'] && isset($usedDirs[0])))
+	if (isset($usedDirs[$id]) || ($context['is_legacy'] && isset($usedDirs[1])))
 		foreach ($availableDirs as $aDir)
-			if (file_exists(dirname(__FILE__) . '/' . $aDir . '/' . $usedDirs[$id]['id_attach'] . '_' . $usedDirs[$id]['file_hash']))
-				return dirname(__FILE__) . '/' . $aDir;
+			if (file_exists(dirname(__FILE__) . '/' . $aDir . '/' . $usedDirs[1]['id_attach'] . '_' . $usedDirs[1]['file_hash']))
+				return array(dirname(__FILE__) . '/' . $aDir);
 
 	// 2nd guess: directory name
 	if (!empty($availableDirs))
 		foreach ($availableDirs as $dirname)
 			if (strrpos($array_setting, $dirname) == (strlen($array_setting) - strlen($dirname)))
-				return dirname(__FILE__) . '/' . $dirname;
+				return array(dirname(__FILE__) . '/' . $dirname);
+
+	// Doing it later saves in case the attached files have been deleted from the file system
+	if (empty($usedDirs) && empty($availableDirs))
+		return false;
+	elseif (empty($usedDirs) && !empty($availableDirs))
+	{
+		$guesses = array();
+		// attachments is the first guess
+		foreach ($availableDirs as $dir)
+			if ($dir == 'attachments')
+				$guesses[] = dirname(__FILE__) . '/' . $dir;
+
+		// all the others
+		foreach ($availableDirs as $dir)
+			if ($dir != 'attachments')
+				$guesses[] = dirname(__FILE__) . '/' . $dir;
+		return $guesses;
+	}
 }
 
 function set_settings()
@@ -755,7 +780,7 @@ function set_settings()
 		$setString[] = array($var, stripslashes($val));
 
 	// Attachments dirs
-	$attach_count = 1;
+	$attach_count = 0;
 	foreach ($setString as $key => $value)
 		if (strpos($value[0], 'attachmentUploadDir') == 0 && strpos($value[0], 'attachmentUploadDir') !== false)
 			{
@@ -772,14 +797,14 @@ function set_settings()
 // 			if (is_dir($attach_dir) && is_writable($attach_dir))
 // 				$setString[] = array('currentAttachmentUploadDir', $id + 1);
 	}
-	elseif (isset($attach_dirs[0]))
+	elseif (!$context['is_legacy'] && isset($attach_dirs[0]))
 	{
 		$setString[] = array('attachmentUploadDir', $attach_dirs[0]);
 		$setString[] = array('currentAttachmentUploadDir', 0);
 	}
-	elseif ($context['is_legacy'] && isset($attach_dirs[1]))
+	elseif ($context['is_legacy'] && isset($attach_dirs[0]))
 	{
-		$setString[] = array('attachmentUploadDir', $attach_dirs[1]);
+		$setString[] = array('attachmentUploadDir', $attach_dirs[0]);
 	}
 	else
 	{
