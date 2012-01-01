@@ -649,7 +649,7 @@ function guess_attachments_directories($id, $array_setting)
 	{
 		$usedDirs = array();
 		$request = $smcFunc['db_query'](true, '
-			SELECT ' . ($context['is_legacy'] ? '1 as id_folder, ID_ATTACH as id_attach, ' : 'DISTINCT(id_folder), id_attach, ') . 'file_hash
+			SELECT ' . ($context['is_legacy'] ? ($id . ' as id_folder, ID_ATTACH as id_attach, ') : 'DISTINCT(id_folder), id_attach, ') . 'file_hash
 			FROM {db_prefix}attachments' . 
 			// If it's SMF 1.x then check only the last attachment loaded
 			($context['is_legacy'] ? ' ORDER BY ID_ATTACH DESC
@@ -674,9 +674,9 @@ function guess_attachments_directories($id, $array_setting)
 	}
 
 	// 1st guess: let's see if we can find a file...if there is at least one.
-	if (isset($usedDirs[$id]) || ($context['is_legacy'] && isset($usedDirs[1])))
+	if (isset($usedDirs[$id]) || ($context['is_legacy'] && isset($usedDirs[$id])))
 		foreach ($availableDirs as $aDir)
-			if (file_exists(dirname(__FILE__) . '/' . $aDir . '/' . $usedDirs[1]['id_attach'] . '_' . $usedDirs[1]['file_hash']))
+			if (file_exists(dirname(__FILE__) . '/' . $aDir . '/' . $usedDirs[$id]['id_attach'] . '_' . $usedDirs[$id]['file_hash']))
 				return array(dirname(__FILE__) . '/' . $aDir);
 
 	// 2nd guess: directory name
