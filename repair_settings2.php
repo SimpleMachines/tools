@@ -19,6 +19,7 @@ if (file_exists(dirname(__FILE__) . '/Settings.php'))
 initialize_inputs();
 
 $txt['smf_repair_settings'] = 'SMF 2.0 Settings Repair Tool';
+$txt['smf11_repair_settings'] = 'SMF 1.x Settings Repair Tool';
 $txt['no_value'] = '<em style="font-weight: normal; color: red;">Value not found!</em>';
 $txt['default_value'] = 'Recommended value';
 $txt['other_possible_value'] = 'Other possible value';
@@ -103,7 +104,7 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 <html xmlns="http://www.w3.org/1999/xhtml">
 	<head>
 		<meta name="robots" content="noindex" />
-		<title>', $txt['smf_repair_settings'], '</title>
+		<title>', $context['is_legacy'] ? $txt['smf11_repair_settings'] : $txt['smf_repair_settings'], '</title>
 		<script type="text/javascript" src="Themes/default/scripts/script.js"></script>
 		<style type="text/css">
 			body
@@ -202,7 +203,7 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 	<body>
 		<div id="header">
 			<a href="http://www.simplemachines.org/" target="_blank"><img src="' . $smflogo . '" style="width: 250px; float: right;" alt="Simple Machines" border="0" /></a>
-			<div>', $txt['smf_repair_settings'], '</div>
+			<div>', $context['is_legacy'] ? $txt['smf11_repair_settings'] : $txt['smf_repair_settings'], '</div>
 		</div>
 		<div id="content">';
 
