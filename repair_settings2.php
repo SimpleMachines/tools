@@ -780,13 +780,25 @@ function set_settings()
 		$setString[] = array($var, stripslashes($val));
 
 	// Attachments dirs
-	$attach_count = 0;
-	foreach ($setString as $key => $value)
-		if (strpos($value[0], 'attachmentUploadDir') == 0 && strpos($value[0], 'attachmentUploadDir') !== false)
-			{
-				$attach_dirs[$attach_count++] = $value[1];
-				unset($setString[$key]);
-			}
+	if ($context['is_legacy'])
+	{
+		foreach ($setString as $key => $value)
+			if (strpos($value[0], 'attachmentUploadDir') == 0 && strpos($value[0], 'attachmentUploadDir') !== false)
+				{
+					$attach_dirs[0] = $value[1];
+					unset($setString[$key]);
+				}
+	}
+	else
+	{
+		$attach_count = 1;
+		foreach ($setString as $key => $value)
+			if (strpos($value[0], 'attachmentUploadDir') == 0 && strpos($value[0], 'attachmentUploadDir') !== false)
+				{
+					$attach_dirs[$attach_count++] = $value[1];
+					unset($setString[$key]);
+				}
+	}
 
 	// Only one dir...or maybe nothing at all
 	if (count($attach_dirs) > 1)
@@ -797,9 +809,9 @@ function set_settings()
 // 			if (is_dir($attach_dir) && is_writable($attach_dir))
 // 				$setString[] = array('currentAttachmentUploadDir', $id + 1);
 	}
-	elseif (!$context['is_legacy'] && isset($attach_dirs[0]))
+	elseif (!$context['is_legacy'] && isset($attach_dirs[1]))
 	{
-		$setString[] = array('attachmentUploadDir', $attach_dirs[0]);
+		$setString[] = array('attachmentUploadDir', $attach_dirs[1]);
 		$setString[] = array('currentAttachmentUploadDir', 0);
 	}
 	elseif ($context['is_legacy'] && isset($attach_dirs[0]))
