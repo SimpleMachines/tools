@@ -561,7 +561,7 @@ function show_settings()
 				if (!is_array($array_settings))
 					$array_settings = array($settings[$setting]);
 
-				$item = 0;
+				$item = 1;
 				foreach ($array_settings as $array_setting)
 				{
 					$suggested = false;
