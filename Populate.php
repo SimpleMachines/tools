@@ -38,6 +38,8 @@ class Populate
     private $blockSize = 50;
 
     private $refreshRate = 0;
+
+    private $maxCategories = 10;
     
     private $maxBoards = 30;
 
@@ -46,6 +48,8 @@ class Populate
     private $maxTopics = 20000;
 
     private $maxMessages = 1000000;
+
+    private $currentCategories = 0;
 
     private $currentBoards = 0;
 
@@ -72,6 +76,10 @@ class Populate
         $this->loremIpsum = new LoremIpsumGenerator();
 
         // Determine our 'currents'
+        $request = $smcFunc['db_query']('', 'SELECT COUNT(*) FROM {db_prefix}categories');
+        list($this->currentCategories) = $smcFunc['db_fetch_row']($request);
+        $smcFunc['db_free_result']($request);
+
         $request = $smcFunc['db_query']('', 'SELECT COUNT(*) FROM {db_prefix}boards');
         list($this->currentBoards) = $smcFunc['db_fetch_row']($request);
         $smcFunc['db_free_result']($request);
@@ -93,7 +101,9 @@ class Populate
 
     private function go()
     {
-        if ($this->currentBoards < $this->maxBoards)
+        if ($this->currentCategories < $this->maxCategories)
+            $this->makeCategories();
+        elseif ($this->currentBoards < $this->maxBoards)
             $this->makeBoards();
         elseif ($this->currentMembers < $this->maxMembers)
             $this->makeMembers();
@@ -102,6 +112,24 @@ class Populate
         else
             $this->complete();
     }
+
+    private function makeCategories()
+    {
+        global $sourcedir;
+        require_once($sourcedir . '/Subs-Categories.php');
+
+        while ($this->currentCategories < $this->maxCategories && $this->blockSize--)
+        {
+            $catOptions = array(
+                'move_after' => 0,
+                'cat_name' => 'Category Number ' . ++$this->currentCategories,
+                'is_collapsible' => 1,
+            );
+            createCategory($catOptions);
+        }
+
+        $this->pause();
+     }
 
     private function makeBoards()
     {
@@ -113,7 +141,7 @@ class Populate
             $boardOptions = array(
                 'board_name' => 'Board Number ' . ++$this->currentBoards,
                 'board_description' => 'I am a sample description...',
-                'target_category' => 1,
+                'target_category' => mt_rand(1, $this->currentCategories),
                 'move_to' => 'top',
             );
             if (mt_rand() < (mt_getrandmax() / 2))
@@ -192,6 +220,7 @@ class Populate
         echo 'Please wait while we refresh the page... <br /><br />
 
         Stats so far:<br />
+        ' . $this->currentCategories . ' of ' . $this->maxCategories . ' categories created<br />
         ' . $this->currentBoards . ' of ' . $this->maxBoards . ' boards created<br />
         ' . $this->currentMembers . ' of ' . $this->maxMembers . ' members created<br />
         ' . $this->currentTopics . ' of ' . $this->maxTopics . ' topics created<br />
