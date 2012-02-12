@@ -557,12 +557,12 @@ function show_settings()
 				echo '
 								<input type="text" name="', $info[0], 'settings[', $setting, ']" id="', $setting, '" value="', isset($settings[$setting]) ? $settings[$setting] : '', '" size="', $settings_section == 'path_url_settings' || $settings_section == 'theme_path_url_settings' ? '60" style="width: 80%;' : '30', '" class="input_text" />';
 
-				if (isset($info[2]) && $info[2] != 'language' && $info[2] != 'cookiename')
+				if (isset($info[2]))
 					echo '
 								<div style="font-size: smaller;">', $txt['default_value'], ': &quot;<strong><a href="javascript:void(0);" id="', $setting, '_default" onclick="document.getElementById(\'', $setting, '\').value = ', $info[2] == '' ? '\'\';">' . $txt['recommend_blank'] : 'getInnerHTML(this);">' . $info[2], '</a></strong>&quot;.</div>',
-								$info[2] == '' ? '' : '
+								$info[2] == '' ? '' : ($setting != 'language' && $setting != 'cookiename' ? '
 								<script type="text/javascript"><!-- // --><![CDATA[
-									resetSettings[settingsCounter++] = "' . $setting . '"; // ]]></script>';
+									resetSettings[settingsCounter++] = "' . $setting . '"; // ]]></script>' : '');
 			}
 			elseif ($info[1] == 'array_string')
 			{
