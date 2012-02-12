@@ -659,12 +659,14 @@ function guess_attachments_directories($id, $array_setting)
 	{
 		$usedDirs = array();
 		$request = $smcFunc['db_query'](true, '
-			SELECT ' . ($context['is_legacy'] ? ($id . ' as id_folder, ID_ATTACH as id_attach, ') : 'DISTINCT(id_folder), id_attach, ') . 'file_hash
-			FROM {db_prefix}attachments' . 
+			SELECT {raw:select_tables}, file_hash
+			FROM {db_prefix}attachments
+			{raw:smf1_limit}',
+			array(
+				'select_tables' => $context['is_legacy'] ? ($id . ' as id_folder, ID_ATTACH as id_attach') : 'DISTINCT(id_folder), id_attach',
 			// If it's SMF 1.x then check only the last attachment loaded
-			($context['is_legacy'] ? ' ORDER BY ID_ATTACH DESC
-			LIMIT 1' : ''),
-			array()
+				'smf1_limit' => $context['is_legacy'] ? ' ORDER BY ID_ATTACH DESC LIMIT 1' : '',
+			)
 		);
 
 		if ($smcFunc['db_num_rows']($request) > 0)
