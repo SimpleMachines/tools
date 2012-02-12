@@ -198,6 +198,10 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 				margin-right: auto;
 				text-align: left;
 			}
+			.changed td
+			{
+				color: red;
+			}
 		</style>
 	</head>
 	<body>
@@ -499,11 +503,16 @@ function show_settings()
 				{
 					return element.innerHTML;
 				}
+
 				function restoreAll()
 				{
 					for (var i=0;i<resetSettings.length;i++)
 					{
-						document.getElementById(resetSettings[i]).value = getInnerHTML(document.getElementById(resetSettings[i] + \'_default\'));
+						var elem = document.getElementById(resetSettings[i]);
+						var val = elem.value;
+						elem.value = getInnerHTML(document.getElementById(resetSettings[i] + \'_default\'));
+						if (val != elem.value)
+						elem.parentNode.parentNode.className += " changed";
 					}
 				}
 			// ]]></script>
@@ -548,7 +557,7 @@ function show_settings()
 				echo '
 								<input type="text" name="', $info[0], 'settings[', $setting, ']" id="', $setting, '" value="', isset($settings[$setting]) ? $settings[$setting] : '', '" size="', $settings_section == 'path_url_settings' || $settings_section == 'theme_path_url_settings' ? '60" style="width: 80%;' : '30', '" class="input_text" />';
 
-				if (isset($info[2]))
+				if (isset($info[2]) && $info[2] != 'language' && $info[2] != 'cookiename')
 					echo '
 								<div style="font-size: smaller;">', $txt['default_value'], ': &quot;<strong><a href="javascript:void(0);" id="', $setting, '_default" onclick="document.getElementById(\'', $setting, '\').value = ', $info[2] == '' ? '\'\';">' . $txt['recommend_blank'] : 'getInnerHTML(this);">' . $info[2], '</a></strong>&quot;.</div>',
 								$info[2] == '' ? '' : '
@@ -714,16 +723,17 @@ function set_settings()
 	$file_updates = isset($_POST['flatsettings']) ? $_POST['flatsettings'] : array();
 	$attach_dirs = array();
 
-	$db_updates['theme_guests'] = 1;
-
 	if (empty($db_updates['theme_default']))
 		unset($db_updates['theme_default']);
 	else
 	{
+		$db_updates['theme_guests'] = 1;
 		$smcFunc['db_query'](true, '
 			UPDATE {db_prefix}members
-			SET ' . ($context['is_legacy'] ? 'ID_THEME' : 'id_theme') . ' = 0',
-			array()
+			SET {raw:theme_column} = 0',
+			array(
+				'theme_column' => $context['is_legacy'] ? 'ID_THEME' : 'id_theme',
+			)
 		);
 	}
 
@@ -785,20 +795,20 @@ function set_settings()
 	{
 		foreach ($setString as $key => $value)
 			if (strpos($value[0], 'attachmentUploadDir') == 0 && strpos($value[0], 'attachmentUploadDir') !== false)
-				{
-					$attach_dirs[0] = $value[1];
-					unset($setString[$key]);
-				}
+			{
+				$attach_dirs[0] = $value[1];
+				unset($setString[$key]);
+			}
 	}
 	else
 	{
 		$attach_count = 1;
 		foreach ($setString as $key => $value)
 			if (strpos($value[0], 'attachmentUploadDir') == 0 && strpos($value[0], 'attachmentUploadDir') !== false)
-				{
-					$attach_dirs[$attach_count++] = $value[1];
-					unset($setString[$key]);
-				}
+			{
+				$attach_dirs[$attach_count++] = $value[1];
+				unset($setString[$key]);
+			}
 	}
 
 	// Only one dir...or maybe nothing at all
