@@ -35,200 +35,201 @@ $populate = new Populate();
  */
 class Populate
 {
-    private $blockSize = 150;
-    private $refreshRate = 0;
-    private $loremIpsum = null;
-    private $ounters = array();
+	private $blockSize = 150;
+	private $refreshRate = 0;
+	private $loremIpsum = null;
+	private $ounters = array();
 
-    private $timeStart = 0;
+	private $timeStart = 0;
 
-    public function __construct($options = array())
-    {
-        global $smcFunc;
+	public function __construct ($options = array())
+	{
+		global $smcFunc;
 
-    $this->counters['categories']['max'] = 10;
-    $this->counters['categories']['current'] = 0;
-    $this->counters['boards']['max'] = 100;
-    $this->counters['boards']['current'] = 0;
-    $this->counters['members']['max'] = 270000;
-    $this->counters['members']['current'] = 0;
-    $this->counters['topics']['max'] = 370000;
-    $this->counters['topics']['current'] = 0;
-    $this->counters['messages']['max'] = 3000000;
-    $this->counters['messages']['current'] = 0;
-        $this->timeStart = microtime(TRUE);
+		$this->counters['categories']['max'] = 10;
+		$this->counters['categories']['current'] = 0;
+		$this->counters['boards']['max'] = 100;
+		$this->counters['boards']['current'] = 0;
+		$this->counters['members']['max'] = 270000;
+		$this->counters['members']['current'] = 0;
+		$this->counters['topics']['max'] = 370000;
+		$this->counters['topics']['current'] = 0;
+		$this->counters['messages']['max'] = 3000000;
+		$this->counters['messages']['current'] = 0;
+		$this->timeStart = microtime(TRUE);
 
-        // Override defaults
-        foreach ($options as $_key => $_value)
-            $this->$_key = $_value;
+		// Override defaults
+		foreach ($options as $_key => $_value)
+			$this->$_key = $_value;
 
-        $this->loremIpsum = new LoremIpsumGenerator();
+		$this->loremIpsum = new LoremIpsumGenerator();
 
-        // Determine our 'currents'
-        foreach($this->counters as $key => $val)
-        {
-					$request = $smcFunc['db_query']('', 'SELECT COUNT(*) FROM {db_prefix}' . $key);
-					list($this->counters[$key]['current']) = $smcFunc['db_fetch_row']($request);
-					$smcFunc['db_free_result']($request);
-					if($key != 'topics' && $this->counters[$key]['current'] < $this->counters[$key]['max'])
-					{
-						$func = 'make'.ucfirst($key);
-						$end = false;
-						break;
-					}
-					else
-						$end = true;
-				}
-				if(!empty($func))
-					$this->$func();
-
-        $this->complete($end);
-    }
-
-    private function makeCategories()
-    {
-        global $sourcedir;
-        require_once($sourcedir . '/Subs-Categories.php');
-
-        while ($this->counters['categories']['current'] < $this->counters['categories']['max'] && $this->blockSize--)
-        {
-            $catOptions = array(
-                'move_after' => 0,
-                'cat_name' => 'Category Number ' . ++$this->counters['categories']['current'],
-                'is_collapsible' => 1,
-            );
-            createCategory($catOptions);
-        }
-
-        $this->pause();
-     }
-
-    private function makeBoards()
-    {
-        global $sourcedir;
-        require_once($sourcedir . '/Subs-Boards.php');
-
-        while ($this->counters['boards']['current'] < $this->counters['boards']['max'] && $this->blockSize--)
-        {
-            $boardOptions = array(
-                'board_name' => 'Board Number ' . ++$this->counters['boards']['current'],
-                'board_description' => 'I am a sample description...',
-                'target_category' => mt_rand(1, $this->counters['categories']['current']),
-                'move_to' => 'top',
-            );
-            if (mt_rand() < (mt_getrandmax() / 2))
-            {
-                $boardOptions = array_merge($boardOptions, array(
-                    'target_board' => mt_rand(1, $this->counters['boards']['current']-1),
-                    'move_to' => 'child',
-                ));
-            }
-
-            createBoard($boardOptions);
-        }
-
-        $this->pause();
-    }
-
-    private function makeMembers()
-    {
-        global $sourcedir;
-        require_once($sourcedir . '/Subs-Members.php');
-
-        while ($this->counters['members']['current'] < $this->counters['members']['max'] && $this->blockSize--)
-        {
-            $regOptions = array(
-                'interface' => 'admin',
-                'username' => 'Member ' . ++$this->counters['members']['current'],
-                'email' => 'member_' . $this->counters['members']['current'] . '@' . $_SERVER['SERVER_NAME'] . (strpos($_SERVER['SERVER_NAME'], '.') === FALSE ? '.com' : ''),
-                'password' => '',
-                'require' => 'nothing'
-            );
-
-            registerMember($regOptions);
-        }
-
-        $this->pause();
-    }
-
-    private function makeMessages()
-    {
-        global $sourcedir;
-        require_once($sourcedir . '/Subs-Post.php');
-
-        while ($this->counters['messages']['current'] < $this->counters['messages']['max'] && $this->blockSize--)
-        {
-            $msgOptions = array(
-                'subject' => trim($this->loremIpsum->getContent(mt_rand(1,6), 'txt')),
-                'body' => trim($this->loremIpsum->getContent(mt_rand(5, 60), 'txt')),
-                'approved' => TRUE
-            );
-
-            $topicOptions = array(
-                'id' => $this->counters['topics']['current'] < $this->counters['topics']['max'] && mt_rand() < (int)(mt_getrandmax() * ($this->counters['topics']['max'] / $this->counters['messages']['max'])) ? 0 : ($this->counters['topics']['current'] < $this->counters['topics']['max'] ? mt_rand(1, ++$this->counters['topics']['current']) : mt_rand(1, $this->counters['topics']['current'])),
-                'board' => mt_rand(1, $this->counters['boards']['max']),
-                'mark_as_read' => TRUE,
-            );
-
-            $member = mt_rand(1, $this->counters['members']['max']);
-            $posterOptions = array(
-                'id' => $member,
-                'name' => 'Member ' . $member,
-                'email' => 'member_' . $member . '@' . $_SERVER['SERVER_NAME'] . '.com',
-                'update_post_count' => TRUE,
-            );
-
-            createPost($msgOptions, $topicOptions, $posterOptions);
-        }
-        $this->pause();
-    }
-
-    private function pause($end = false)
-    {
-			if(!$end)
-			{
-				header('Refresh: ' . $this->refreshRate . '; URL=' . $_SERVER['PHP_SELF']);
-				// Pausing while we start again (server timeouts = bad)
-				echo 'Please wait while we refresh the page... <br /><br />';
-			}
-
-			if(!$end)
-				echo '
-        Stats so far:<br />';
-			else
-				echo '
-        Final stats:<br />';
-       
-			foreach($this->counters as $key => $val)
-				echo '
-        ' . $val['current'] . ' of ' . $val['max'] . ' ' . $key . ' created<br />';
-			echo '
-        Time taken for last request: ' . round(microtime(TRUE) - $this->timeStart, 3) . ' seconds';
-
-			if($end)
-				echo '<br /><br />
-				<b>Completed</b>';
-    }
-
-		private function fixupTopicsBoards ()
+		// Determine our 'currents'
+		foreach ($this->counters as $key => $val)
 		{
-			global $smcFunc, $sourcedir;
+			$request = $smcFunc['db_query']('', 'SELECT COUNT(*) FROM {db_prefix}' . $key);
+			list($this->counters[$key]['current']) = $smcFunc['db_fetch_row']($request);
+			$smcFunc['db_free_result']($request);
+			if ($key != 'topics' && $this->counters[$key]['current'] < $this->counters[$key]['max'])
+			{
+				$func = 'make'.ucfirst($key);
+				$end = false;
+				break;
+			}
+			else
+				$end = true;
+		}
+		if (!empty($func))
+			$this->$func();
 
-			$smcFunc['db_query']('', '
-				UPDATE {db_prefix}messages as mes, {db_prefix}topics as top
-				SET mes.id_board = top.id_board
-				WHERE mes.id_topic = top.id_topic',
-				array());
+		$this->complete($end);
+	}
+
+	private function makeCategories ()
+	{
+		global $sourcedir;
+		require_once($sourcedir . '/Subs-Categories.php');
+
+		while ($this->counters['categories']['current'] < $this->counters['categories']['max'] && $this->blockSize--)
+		{
+			$catOptions = array(
+				'move_after' => 0,
+				'cat_name' => 'Category Number ' . ++$this->counters['categories']['current'],
+				'is_collapsible' => 1,
+			);
+			createCategory($catOptions);
 		}
 
-    private function complete($end)
-    {
-			if($end)
+		$this->pause();
+	}
+
+	private function makeBoards()
+	{
+		global $sourcedir;
+		require_once($sourcedir . '/Subs-Boards.php');
+
+		while ($this->counters['boards']['current'] < $this->counters['boards']['max'] && $this->blockSize--)
+		{
+			$boardOptions = array(
+				'board_name' => 'Board Number ' . ++$this->counters['boards']['current'],
+				'board_description' => 'I am a sample description...',
+				'target_category' => mt_rand(1, $this->counters['categories']['current']),
+				'move_to' => 'top',
+			);
+			if (mt_rand() < (mt_getrandmax() / 2))
 			{
-				$this->fixupTopicsBoards();
-				$this->pause($end);
+				$boardOptions = array_merge($boardOptions, array(
+					'target_board' => mt_rand(1, $this->counters['boards']['current']-1),
+					'move_to' => 'child',
+				));
 			}
-    }
+
+			createBoard($boardOptions);
+		}
+
+		$this->pause();
+	}
+
+	private function makeMembers()
+	{
+		global $sourcedir;
+		require_once($sourcedir . '/Subs-Members.php');
+
+		while ($this->counters['members']['current'] < $this->counters['members']['max'] && $this->blockSize--)
+		{
+			$regOptions = array(
+				'interface' => 'admin',
+				'username' => 'Member ' . ++$this->counters['members']['current'],
+				'email' => 'member_' . $this->counters['members']['current'] . '@' . $_SERVER['SERVER_NAME'] . (strpos($_SERVER['SERVER_NAME'], '.') === FALSE ? '.com' : ''),
+				'password' => '',
+				'require' => 'nothing'
+			);
+
+			registerMember($regOptions);
+		}
+
+		$this->pause();
+	}
+
+	private function makeMessages()
+	{
+		global $sourcedir;
+		require_once($sourcedir . '/Subs-Post.php');
+
+		while ($this->counters['messages']['current'] < $this->counters['messages']['max'] && $this->blockSize--)
+		{
+			$msgOptions = array(
+				'subject' => trim($this->loremIpsum->getContent(mt_rand(1,6), 'txt')),
+				'body' => trim($this->loremIpsum->getContent(mt_rand(5, 60), 'txt')),
+				'approved' => TRUE
+			);
+
+			$topicOptions = array(
+				'id' => $this->counters['topics']['current'] < $this->counters['topics']['max'] && mt_rand() < (int)(mt_getrandmax() * ($this->counters['topics']['max'] / $this->counters['messages']['max'])) ? 0 : ($this->counters['topics']['current'] < $this->counters['topics']['max'] ? mt_rand(1, ++$this->counters['topics']['current']) : mt_rand(1, $this->counters['topics']['current'])),
+				'board' => mt_rand(1, $this->counters['boards']['max']),
+				'mark_as_read' => TRUE,
+			);
+
+			$member = mt_rand(1, $this->counters['members']['max']);
+			$posterOptions = array(
+				'id' => $member,
+				'name' => 'Member ' . $member,
+				'email' => 'member_' . $member . '@' . $_SERVER['SERVER_NAME'] . '.com',
+				'update_post_count' => TRUE,
+			);
+
+			createPost($msgOptions, $topicOptions, $posterOptions);
+		}
+		$this->pause();
+	}
+
+	private function pause($end = false)
+	{
+		if(!$end)
+		{
+			header('Refresh: ' . $this->refreshRate . '; URL=' . $_SERVER['PHP_SELF']);
+			// Pausing while we start again (server timeouts = bad)
+			echo 'Please wait while we refresh the page... <br /><br />';
+		}
+
+		if(!$end)
+			echo '
+			Stats so far:<br />';
+		else
+			echo '
+			Final stats:<br />';
+			
+		foreach($this->counters as $key => $val)
+			echo '
+			' . $val['current'] . ' of ' . $val['max'] . ' ' . $key . ' created<br />';
+		echo '
+			Time taken for last request: ' . round(microtime(TRUE) - $this->timeStart, 3) . ' seconds';
+
+		if($end)
+			echo '<br /><br />
+			<b>Completed</b>';
+	}
+
+	private function fixupTopicsBoards ()
+	{
+		global $smcFunc, $sourcedir;
+
+		$smcFunc['db_query']('', '
+			UPDATE {db_prefix}messages as mes, {db_prefix}topics as top
+			SET mes.id_board = top.id_board
+			WHERE mes.id_topic = top.id_topic',
+			array()
+		);
+	}
+
+	private function complete($end)
+	{
+		if($end)
+		{
+			$this->fixupTopicsBoards();
+			$this->pause($end);
+		}
+	}
 }
 
 class LoremIpsumGenerator {
