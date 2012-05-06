@@ -14,3 +14,7 @@ All scripts in this repository are under BSD 3-clause license, unless specified 
 * smfinfo.php
 * status.php
 * webinstall.php
+
+# Tools download
+
+Apart from cloning the repo, you can find the files more useful to end-users at the [download page](https://github.com/emanuele45/tools/downloads)
