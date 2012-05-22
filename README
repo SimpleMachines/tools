@@ -1,5 +1,0 @@
-SMF Tools repository.
-
-This repository contains a few useful scripts for SMF, such as install/upgrade or repair scripts, database cleaning up, etc.
-All scripts in this repository are under BSD 3-clause license, unless specified otherwise.
-
