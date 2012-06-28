@@ -312,7 +312,7 @@ function show_settings()
 
 		if (isset($settingsArray[$i][0]) && $settingsArray[$i][0] != '.')
 		{
-			preg_match('~^[$]([a-zA-Z_]+)\s*=\s*(["\'])?(.*?)(?:\\2)?;~', $settingsArray[$i], $match);
+			preg_match('~^[$]([a-zA-Z_]+)\s*=\s*(?:(["\'])(.*?["\'])(?:\\2)?|(.*?)(?:\\2)?);~', $settingsArray[$i], $match);
 			if (isset($match[3]))
 			{
 				if ($match[3] == 'dirname(__FILE__)')
@@ -764,7 +764,7 @@ function set_settings()
 			continue;
 		}
 
-		if (isset($settingsArray[$i][0]) && $settingsArray[$i][0] != '.' && preg_match('~^[$]([a-zA-Z_]+)\s*=\s*(["\'])?(.*?)(?:\\2)?;~', $settingsArray[$i], $match) == 1)
+		if (isset($settingsArray[$i][0]) && $settingsArray[$i][0] != '.' && preg_match('~^[$]([a-zA-Z_]+)\s*=\s*(?:(["\'])(.*?["\'])(?:\\2)?|(.*?)(?:\\2)?);~', $settingsArray[$i], $match) == 1)
 			$settings[$match[1]] = stripslashes($match[3]);
 
 		foreach ($file_updates as $var => $val)
