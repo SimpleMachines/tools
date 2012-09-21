@@ -25,6 +25,7 @@ $txt['default_value'] = 'Recommended value';
 $txt['other_possible_value'] = 'Other possible value';
 $txt['no_default_value'] = 'No recommended value';
 $txt['save_settings'] = 'Save Settings';
+$txt['remove_hooks'] = 'Remove all hooks';
 $txt['restore_all_settings'] = 'Restore all settings';
 $txt['not_writable'] = 'Settings.php cannot be written to by your webserver.  Please modify the permissions on this file to allow write access.';
 $txt['recommend_blank'] = '<em>(blank)</em>';
@@ -93,6 +94,8 @@ if (!empty($db_type) && isset($txt['db_' . $db_type]))
 
 if (isset($_POST['submit']))
 	set_settings();
+if (isset($_POST['remove_hooks']))
+	remove_hooks();
 
 // try to find the smflogo: could be a .gif or a .png
 $smflogo = "Themes/default/images/smflogo.png";
@@ -649,7 +652,8 @@ function show_settings()
 	else
 		echo '
 				[<a href="javascript:restoreAll();">', $txt['restore_all_settings'], '</a>]
-				<input type="submit" name="submit" value="', $txt['save_settings'], '" class="button_submit" />';
+				<input type="submit" name="submit" value="', $txt['save_settings'], '" class="button_submit" />', $context['is_legacy'] ? '' : '
+				<input type="submit" name="remove_hooks" value="' . $txt['remove_hooks'] . '" class="button_submit" />';
 
 	echo '
 				</div>
@@ -870,6 +874,22 @@ function set_settings()
 			$setString,
 			array('id_theme', 'id_member', 'variable')
 		);
+}
+
+function remove_hooks()
+{
+	global $smcFunc;
+
+	$smcFunc['db_query']('', '
+		DELETE FROM {db_prefix}settings
+		WHERE variable LIKE {string:variable}%',
+		array(
+			'variable' => 'integrate_'
+		)
+	);
+
+	// Now fixing the cache...
+	cache_put_data('modsettings', null, 0);
 }
 
 // Compat mode!
