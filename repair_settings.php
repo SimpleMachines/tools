@@ -882,9 +882,9 @@ function remove_hooks()
 
 	$smcFunc['db_query']('', '
 		DELETE FROM {db_prefix}settings
-		WHERE variable LIKE {string:variable}%',
+		WHERE variable LIKE {string:variable}',
 		array(
-			'variable' => 'integrate_'
+			'variable' => 'integrate_%'
 		)
 	);
 
