@@ -49,6 +49,7 @@ function fixp_english ()
 	$txt['log_packages_title_removed'] = 'Uninstalled packages';
 	$txt['pack_button_remove'] = 'Mark uninstalled selected';
 	$txt['pack_button_install'] = 'Mark installed selected';
+	$txt['remove_hooks'] = 'Remove all hooks';
 	$txt['uninstall'] = 'Show uninstalled';
 	$txt['install'] = 'Show installed';
 	$txt['mod_installed'] = 'Install date';
@@ -144,6 +145,8 @@ function fixp_main ()
 		require_once($sourcedir . '/Subs-Package.php');
 		package_put_contents($boarddir . '/Packages/installed.list', time());
 	}
+	if (isset($_POST['remove_hooks']))
+		remove_hooks();
 
 	$context['sub_template'] = 'admin';
 	$context['page_title'] = $txt['log_packages_title_' . (!empty($context['install']) ? 'installed' : 'removed')];
@@ -207,7 +210,8 @@ function fixp_main ()
 				'position' => 'below_table_data',
 				'value' => '
 				<a href="' . $boardurl . '/fix_packages.php' . (!empty($context['install']) ? '?uninstall' : '') . '">[ ' . (!empty($context['install']) ? $txt['uninstall'] : $txt['install']) . ' ]</a>
-				<input type="submit" name="remove_hooks" value="' . $txt['pack_button_' . (!empty($context['install']) ? 'remove' : 'install')] . '" class="button_submit" />',
+				<input type="submit" name="remove_packages" value="' . $txt['pack_button_' . (!empty($context['install']) ? 'remove' : 'install')] . '" class="button_submit" />
+				<input type="submit" name="remove_hooks" value="' . $txt['remove_hooks'] . '" class="button_submit" />',
 				'class' => 'righttext',
 			),
 		),
@@ -256,4 +260,20 @@ function list_getNumPacks ()
 	$smcFunc['db_free_result']($request);
 
 	return $numPacks;
+}
+
+function remove_hooks()
+{
+	global $smcFunc;
+
+	$smcFunc['db_query']('', '
+		DELETE FROM {db_prefix}settings
+		WHERE variable LIKE {string:variable}',
+		array(
+			'variable' => 'integrate_%'
+		)
+	);
+
+	// Now fixing the cache...
+	cache_put_data('modsettings', null, 0);
 }
