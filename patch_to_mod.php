@@ -262,6 +262,10 @@ function prepare_files ()
 			if (!empty($_FILES['mod_patch']['error'][$key]))
 				return false;
 
+			// If no files are specified the array contains an empty item
+			if (empty($_FILES['mod_file']['tmp_name'][$key]))
+				continue;
+
 			// That one goes into a subdir
 			if (isset($_POST['mod_file_subdir'][$key]))
 				$context['up_files'][$key]['sub_dir'] = $_POST['mod_file_subdir'][$key];
