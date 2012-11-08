@@ -2,6 +2,15 @@
 /**
  * Patch to Mod
  *
+ * This script should convert patches (at the moment git generated diffs)
+ * to fully functional mods for SMF
+ * To set up the script:
+ *  - put it into the same directory as a working SMF
+ *  - set the variable $create_path to an absolute path writable by the 
+ *    script (the package will be saved there, remember to delete it)
+ *  - point the browser to http://yourdomain.tld/forum/patch_to_mod.php
+ *  - enjoy! :P
+ *
  * @package PtM
  * @author emanuele
  * @copyright 2012 emanuele, Simple Machines
