@@ -18,7 +18,7 @@ global $db_changes, $mod_name, $has_db_changes;
  * The idea behind is: 'name_of_the_db_function' => array(elements like used with $smcFunx['name_of_the_db_function']);
  * For example adding two columns could be:
 $db_changes['db_add_column'][] = array (
-			'{db_prefix}topics', 
+			'{db_prefix}topics',
 			array(
 			      'name' => 'new_column_name',
 			      'type' => 'mediumint',
@@ -28,7 +28,7 @@ $db_changes['db_add_column'][] = array (
 			'ignore'
 		);
 $db_changes['db_add_column'][] = array (
-			'{db_prefix}boards', 
+			'{db_prefix}boards',
 			array(
 			      'name' => 'new_board_column_name',
 			      'type' => 'varchar',
@@ -97,7 +97,7 @@ function install_db_mod ()
 			$context['warning_missing_db_changes'] = true;
 	}
 	else
-		$context['has_db_changes']
+		$context['has_db_changes'];
 
 	// Sorry, only logged in admins...
 	isAllowedTo('admin_forum');
@@ -112,7 +112,7 @@ function setup_dbchanges ($uninstall = false, $apply = true)
 
 	$revertable_functions = array(
 		'db_add_column' => ($uninstall ? 'db_remove_column' : 'db_add_column'),
-		'db_add_index' => ($uninstall ? 'db_remove_index' : 'db_add_index')
+		'db_add_index' => ($uninstall ? 'db_remove_index' : 'db_add_index'),
 		'db_create_table' => ($uninstall ? 'db_drop_table' : 'db_create_table')
 	);
 	// sorry, no data validation. What is here *must* be correct, it's your fault if it isn't.
