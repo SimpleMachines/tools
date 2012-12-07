@@ -33,7 +33,7 @@ $has_db_changes = true;
 // -------------------------- DON'T CHANGE ANYTHING BELOW THIS LINE -------------------------------------------------------------------------------------------
 define('SMF_INTEGRATION_SETTINGS', serialize(array(
 	'integrate_menu_buttons' => 'install_menu_button',)));
-define('MOD_INSTALL', true)
+define('MOD_INSTALL', true);
 
 if (file_exists(dirname(__FILE__) . '/SSI.php') && !defined('SMF'))
 	require_once(dirname(__FILE__) . '/SSI.php');
