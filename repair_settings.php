@@ -25,6 +25,7 @@ $txt['default_value'] = 'Recommended value';
 $txt['other_possible_value'] = 'Other possible value';
 $txt['no_default_value'] = 'No recommended value';
 $txt['save_settings'] = 'Save Settings';
+$txt['remove_hooks'] = 'Remove all hooks';
 $txt['restore_all_settings'] = 'Restore all settings';
 $txt['not_writable'] = 'Settings.php cannot be written to by your webserver.  Please modify the permissions on this file to allow write access.';
 $txt['recommend_blank'] = '<em>(blank)</em>';
@@ -93,6 +94,8 @@ if (!empty($db_type) && isset($txt['db_' . $db_type]))
 
 if (isset($_POST['submit']))
 	set_settings();
+if (isset($_POST['remove_hooks']))
+	remove_hooks();
 
 // try to find the smflogo: could be a .gif or a .png
 $smflogo = "Themes/default/images/smflogo.png";
@@ -229,17 +232,24 @@ function initialize_inputs()
 		ini_set('session.save_handler', 'files');
 	@session_start();
 
-	// Add slashes, as long as they aren't already being added.
-	if (!function_exists('get_magic_quotes_gpc') || @get_magic_quotes_gpc() == 0)
+	// Slashes as soo old-fashion...
+	if (function_exists('get_magic_quotes_gpc') && @get_magic_quotes_gpc() != 0)
 	{
 		foreach ($_POST as $k => $v)
-		{
 			if (is_array($v))
 				foreach ($v as $k2 => $v2)
-					$_POST[$k][$k2] = addslashes($v2);
+					$_POST[$k][$k2] = stripslashes($v2);
 			else
-				$_POST[$k] = addslashes($v);
-		}
+				$_POST[$k] = stripslashes($v);
+	}
+
+	foreach ($_POST as $k => $v)
+	{
+		if (is_array($v))
+			foreach ($v as $k2 => $v2)
+				$_POST[$k][$k2] = addcslashes($v2, '\'');
+		else
+			$_POST[$k] = addcslashes($v, '\'');
 	}
 
 	// This is really quite simple; if ?delete is on the URL, delete the installer...
@@ -305,7 +315,7 @@ function show_settings()
 
 		if (isset($settingsArray[$i][0]) && $settingsArray[$i][0] != '.')
 		{
-			preg_match('~^[$]([a-zA-Z_]+)\s*=\s*(["\'])?(.*?)(?:\\2)?;~', $settingsArray[$i], $match);
+			preg_match('~^[$]([a-zA-Z_]+)\s*=\s*(?:(["\'])(?:(.*?)["\'])(?:\\2)?|(.*?)(?:\\2)?);~', $settingsArray[$i], $match);
 			if (isset($match[3]))
 			{
 				if ($match[3] == 'dirname(__FILE__)')
@@ -555,7 +565,7 @@ function show_settings()
 			elseif ($info[1] == 'string')
 			{
 				echo '
-								<input type="text" name="', $info[0], 'settings[', $setting, ']" id="', $setting, '" value="', isset($settings[$setting]) ? $settings[$setting] : '', '" size="', $settings_section == 'path_url_settings' || $settings_section == 'theme_path_url_settings' ? '60" style="width: 80%;' : '30', '" class="input_text" />';
+								<input type="text" name="', $info[0], 'settings[', $setting, ']" id="', $setting, '" value="', isset($settings[$setting]) ? htmlspecialchars($settings[$setting]) : '', '" size="', $settings_section == 'path_url_settings' || $settings_section == 'theme_path_url_settings' ? '60" style="width: 80%;' : '30', '" class="input_text" />';
 
 				if (isset($info[2]))
 					echo '
@@ -642,7 +652,8 @@ function show_settings()
 	else
 		echo '
 				[<a href="javascript:restoreAll();">', $txt['restore_all_settings'], '</a>]
-				<input type="submit" name="submit" value="', $txt['save_settings'], '" class="button_submit" />';
+				<input type="submit" name="submit" value="', $txt['save_settings'], '" class="button_submit" />', $context['is_legacy'] ? '' : '
+				<input type="submit" name="remove_hooks" value="' . $txt['remove_hooks'] . '" class="button_submit" />';
 
 	echo '
 				</div>
@@ -757,7 +768,7 @@ function set_settings()
 			continue;
 		}
 
-		if (isset($settingsArray[$i][0]) && $settingsArray[$i][0] != '.' && preg_match('~^[$]([a-zA-Z_]+)\s*=\s*(["\'])?(.*?)(?:\\2)?;~', $settingsArray[$i], $match) == 1)
+		if (isset($settingsArray[$i][0]) && $settingsArray[$i][0] != '.' && preg_match('~^[$]([a-zA-Z_]+)\s*=\s*(?:(["\'])(.*?["\'])(?:\\2)?|(.*?)(?:\\2)?);~', $settingsArray[$i], $match) == 1)
 			$settings[$match[1]] = stripslashes($match[3]);
 
 		foreach ($file_updates as $var => $val)
@@ -863,6 +874,22 @@ function set_settings()
 			$setString,
 			array('id_theme', 'id_member', 'variable')
 		);
+}
+
+function remove_hooks()
+{
+	global $smcFunc;
+
+	$smcFunc['db_query']('', '
+		DELETE FROM {db_prefix}settings
+		WHERE variable LIKE {string:variable}',
+		array(
+			'variable' => 'integrate_%'
+		)
+	);
+
+	// Now fixing the cache...
+	cache_put_data('modsettings', null, 0);
 }
 
 // Compat mode!
