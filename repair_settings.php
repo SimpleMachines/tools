@@ -124,8 +124,6 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 			}
 			div#header
 			{
-				background-image: url(Themes/default/images/catbg.jpg);
-				background-repeat: repeat-x;
 				background-color: #88a6c0;
 				padding: 22px 4% 12px 4%;
 				color: white;
