@@ -237,7 +237,7 @@ function initialize_inputs()
 
 			if (is_array($v))
 				foreach ($v as $k2 => $v2)
-					$_POST[$k][$k2] = stripslashes($v2);
+					$_POST[$k][$k2] = addslashes($v2);
 			else
 				$_POST[$k] = addslashes($v);
 	}
