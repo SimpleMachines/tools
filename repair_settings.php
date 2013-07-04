@@ -230,26 +230,17 @@ function initialize_inputs()
 		ini_set('session.save_handler', 'files');
 	@session_start();
 
-
-	// Slashes as soo old-fashion...
+	// Add slashes, as long as they aren't already being added.
 	if (!function_exists('get_magic_quotes_gpc') || @get_magic_quotes_gpc() == 0)
 	{
 		foreach ($_POST as $k => $v)
-
+		{
 			if (is_array($v))
 				foreach ($v as $k2 => $v2)
 					$_POST[$k][$k2] = addslashes($v2);
 			else
 				$_POST[$k] = addslashes($v);
-	}
-
-	foreach ($_POST as $k => $v)
-	{
-		if (is_array($v))
-			foreach ($v as $k2 => $v2)
-				$_POST[$k][$k2] = addcslashes($v2, '\'');
-		else
-			$_POST[$k] = addcslashes($v, '\'');
+		}
 	}
 
 	// This is really quite simple; if ?delete is on the URL, delete the installer...
