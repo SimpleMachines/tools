@@ -112,7 +112,7 @@ class Populate
 		{
 			$boardOptions = array(
 				'board_name' => 'Board Number ' . ++$this->counters['boards']['current'],
-				'board_description' => 'I am a sample description...',
+				'board_description' => trim($this->loremIpsum->getContent(mt_rand(5, 30), 'txt')),
 				'target_category' => mt_rand(1, $this->counters['categories']['current']),
 				'move_to' => 'top',
 			);
