@@ -18,7 +18,7 @@ if (file_exists(dirname(__FILE__) . '/Settings.php'))
 // Initialize everything and load the language files.
 initialize_inputs();
 
-$txt['smf_repair_settings'] = 'SMF 2.0 Settings Repair Tool';
+$txt['smf_repair_settings'] = 'SMF 2.x Settings Repair Tool';
 $txt['smf11_repair_settings'] = 'SMF 1.x Settings Repair Tool';
 $txt['no_value'] = '<em style="font-weight: normal; color: red;">Value not found!</em>';
 $txt['default_value'] = 'Recommended value';
@@ -262,7 +262,7 @@ function initialize_inputs()
 			$smcFunc = array();
 
 		// Default the database type to MySQL.
-		if (empty($db_type) || !file_exists($sourcedir . '/Subs-Db-' . $db_type . '.php'))
+		if (empty($db_type) || !file_exists($sourcedir . '/Subs-Db-' . $db_type . '.php') || ($db_type == 'mysqli'))
 			$db_type = 'mysql';
 
 		require_once($sourcedir . '/Load.php');
