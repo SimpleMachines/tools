@@ -94,13 +94,14 @@ if (!empty($db_type) && isset($txt['db_' . $db_type]))
 
 if (isset($_POST['submit']))
 	set_settings();
+
 if (isset($_POST['remove_hooks']))
 	remove_hooks();
 
 // try to find the smflogo: could be a .gif or a .png
 $smflogo = "Themes/default/images/smflogo.png";
 if (!file_exists(dirname(__FILE__) . "/" . $smflogo))
-$smflogo = "Themes/default/images/smflogo.gif";
+	$smflogo = "Themes/default/images/smflogo.gif";
 
 // Note that we're using the default URLs because we aren't even going to try to use Settings.php's settings.
 echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -212,7 +213,7 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 		</div>
 		<div id="content">';
 
-show_settings();
+	show_settings();
 
 echo '
 		</div>
@@ -256,7 +257,8 @@ function initialize_inputs()
 	$db_connection = false;
 	if (isset($sourcedir))
 	{
-		define('SMF', 1);
+		if (!defined('SMF'))
+			define('SMF', 1);
 
 		if (empty($smcFunc))
 			$smcFunc = array();
@@ -282,6 +284,14 @@ function initialize_inputs()
 			require_once($sourcedir . '/DbExtra-' . $db_type . '.php');
 			$db_connection = smf_db_initiate($db_server, $db_name, $db_user, $db_passwd, $db_prefix, array('non_fatal' => true));
 			db_extra_init();
+			//Fixes error with $db_connection not false if database name is incorrect. This is because the connection is established
+			//without this parameter, thus performing incorrectly.
+			if ($db_connection == true)
+			{
+				$tables=$smcFunc['db_list_tables']($db_name);
+				if (!(is_array($tables) && count($tables) > 0))
+					$db_connection = null;
+			}
 		}
 	}
 }
@@ -322,7 +332,6 @@ function show_settings()
 			}
 		}
 	}
-
 	if ($db_connection == true)
 	{
 		$request = $smcFunc['db_query'](true, '
@@ -720,7 +729,7 @@ function guess_attachments_directories($id, $array_setting)
 
 function set_settings()
 {
-	global $smcFunc, $context;
+	global $smcFunc, $context, $db_connection, $db_server, $db_name, $db_user, $db_passwd, $db_prefix, $db_type;
 
 	$db_updates = isset($_POST['dbsettings']) ? $_POST['dbsettings'] : array();
 	$theme_updates = isset($_POST['themesettings']) ? $_POST['themesettings'] : array();
@@ -790,6 +799,12 @@ function set_settings()
 	// Make sure it works.
 	require(dirname(__FILE__) . '/Settings.php');
 
+	//We need to re-try the database settings, right?
+	initialize_inputs();
+	//if database settings are wrong, we will not try anything else!
+	if ($db_connection != true)
+		return;
+
 	$setString = array();
 	foreach ($db_updates as $var => $val)
 		$setString[] = array($var, stripslashes($val));
@@ -838,7 +853,7 @@ function set_settings()
 		$setString[] = array('attachmentUploadDir', '');
 		$setString[] = array('currentAttachmentUploadDir', 0);
 	}
-
+	
 	if (!empty($setString))
 		$smcFunc['db_insert']('replace',
 			'{db_prefix}settings',
