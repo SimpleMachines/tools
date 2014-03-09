@@ -30,6 +30,7 @@ $txt['restore_all_settings'] = 'Restore all settings';
 $txt['not_writable'] = 'Settings.php cannot be written to by your webserver.  Please modify the permissions on this file to allow write access.';
 $txt['recommend_blank'] = '<em>(blank)</em>';
 $txt['database_settings_hidden'] = 'Some settings are not being shown because the database connection information is incorrect.';
+$txt['no_sources'] = 'We were unable to detect your Sources folder. This is crucial for this tool to work. Please be sure it exists.';
 
 $txt['critical_settings'] = 'Critical Settings';
 $txt['critical_settings_info'] = 'These are the settings most likely to be screwing up your board, but try the things below (especially the path and URL ones) if these don\'t help.  You can click on the recommended value to use it.';
@@ -222,7 +223,7 @@ echo '
 
 function initialize_inputs()
 {
-	global $smcFunc, $db_connection, $sourcedir, $db_server, $db_name, $db_user, $db_passwd, $db_prefix, $db_type, $context;
+	global $smcFunc, $db_connection, $sourcedir, $db_server, $db_name, $db_user, $db_passwd, $db_prefix, $db_type, $context, $sources_exist, $sources_found_path;
 
 	// Turn off magic quotes runtime and enable error reporting.
 	@set_magic_quotes_runtime(0);
@@ -230,7 +231,7 @@ function initialize_inputs()
 	if (ini_get('session.save_handler') == 'user')
 		ini_set('session.save_handler', 'files');
 	@session_start();
-
+	
 	// Add slashes, as long as they aren't already being added.
 	if (!function_exists('get_magic_quotes_gpc') || @get_magic_quotes_gpc() == 0)
 	{
@@ -255,7 +256,19 @@ function initialize_inputs()
 	}
 
 	$db_connection = false;
-	if (isset($sourcedir))
+	$sources_exist = false;
+	$sources_found_path = '';
+	if (isset($sourcedir) && (file_exists(dirname(__FILE__) . '/Sources/Load.php')))
+		$sources_exist = true;
+	else
+	{
+		//Find Sources folder!
+		$sourcedir = findSources();
+		$sources_found_path = $sourcedir;
+		$sources_exist = !empty($sourcedir);
+	}
+	
+	if ($sources_exist)
 	{
 		if (!defined('SMF'))
 			define('SMF', 1);
@@ -267,8 +280,8 @@ function initialize_inputs()
 		if (empty($db_type) || !file_exists($sourcedir . '/Subs-Db-' . $db_type . '.php'))
 			$db_type = 'mysql';
 
-		require_once($sourcedir . '/Load.php');
-		require_once($sourcedir . '/Subs-Auth.php');
+		//require_once($sourcedir . '/Load.php');
+		//require_once($sourcedir . '/Subs-Auth.php');
 
 		// compat mode. Active!
 		$context['is_legacy'] = true;
@@ -298,7 +311,7 @@ function initialize_inputs()
 
 function show_settings()
 {
-	global $txt, $smcFunc, $db_connection, $db_type, $db_name, $db_prefix, $context;
+	global $txt, $smcFunc, $db_connection, $db_type, $db_name, $db_prefix, $context, $sources_exist, $sources_found_path;
 
 	// Check to make sure Settings.php exists!
 	if (file_exists(dirname(__FILE__) . '/Settings.php'))
@@ -429,6 +442,8 @@ function show_settings()
 
 	if (file_exists(dirname(__FILE__) . '/Sources'))
 		$known_settings['path_url_settings']['sourcedir'][2] = realpath(dirname(__FILE__) . '/Sources');
+	elseif (!empty($sources_found_path))
+		$known_settings['path_url_settings']['sourcedir'][2] = realpath($sources_found_path);
 
 	if (file_exists(dirname(__FILE__) . '/cache'))
 		$known_settings['path_url_settings']['cachedir'][2] = realpath(dirname(__FILE__) . '/cache');
@@ -480,6 +495,14 @@ function show_settings()
 			$txt['theme_' . $id . '_theme_dir'] = $theme['name'] . ' Directory';
 		}
 	}
+	
+	if (!$sources_exist)
+	{
+		echo '
+			<div class="error_message" style="margin-bottom: 2ex;">
+				', $txt['no_sources'], '
+			</div>';	
+	}
 
 	if ($db_connection == true)
 	{
@@ -501,7 +524,7 @@ function show_settings()
 		echo '
 			<div class="error_message" style="margin-bottom: 2ex;">
 				', $txt['database_settings_hidden'], '
-			</div>';
+			</div>';	
 	}
 
 	echo '
@@ -1172,4 +1195,42 @@ function smc_compat_initiate($db_server, $db_name, $db_user, $db_passwd, $db_pre
 	$smcFunc['db_list_tables'] = 'smf_db_list_tables';
 
 	return $db_connection;
+}
+
+//Function to find Sources automatically. If it's here, we find it :)
+function findSources()
+{
+	$basedir = dirname(__FILE__); //Our location :)
+	$dirs = array();
+	$dir = dir($basedir);
+	
+	//All our folders
+	while ($line = $dir->read())
+	{
+		if (in_array($line, array('.', '..', 'blank.gif', 'index', '.htaccess')))
+			continue;
+		if (is_dir($line)) 
+			$dirs[] = $line;
+		else
+			$files[] = $line;
+	}
+	$dir->close();
+	
+	foreach ($dirs as $key => $value) //Let's find Load.php!!!
+	{
+		//Files in this folder
+		$current_folder = $basedir . '/' . $value;
+		$dir = dir($current_folder);
+		while ($line = $dir->read())
+		{
+			if (in_array($line, array('.', '..', 'blank.gif', 'index', '.htaccess')))
+				continue;
+			//We are looking for Load.php. As good as any other :)
+			if (!is_dir($line) && ($line == 'Load.php'))
+				return $current_folder;
+		}
+		$dir->close();
+	}
+	//If we get to the end, well, we didn't find it...
+	return null;
 }
