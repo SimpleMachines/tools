@@ -29,7 +29,7 @@ $txt['remove_hooks'] = 'Remove all hooks';
 $txt['restore_all_settings'] = 'Restore all settings';
 $txt['not_writable'] = 'Settings.php cannot be written to by your webserver.  Please modify the permissions on this file to allow write access.';
 $txt['recommend_blank'] = '<em>(blank)</em>';
-$txt['database_settings_hidden'] = 'Some settings are not being shown because the database connection information is incorrect.';
+$txt['database_settings_hidden'] = 'Some settings are not being shown because the database connection information is incorrect.<br />Check your database login details, table prefix and that the database actually contains your SMF tables.';
 $txt['no_sources'] = 'We were unable to detect your Sources folder. This is crucial for this tool to work. Please be sure it exists.';
 
 $txt['critical_settings'] = 'Critical Settings';
@@ -301,10 +301,17 @@ function initialize_inputs()
 			//without this parameter, thus performing incorrectly.
 			if ($db_connection == true)
 			{
-				$tables=$smcFunc['db_list_tables']($db_name);
-				if (!(is_array($tables) && count($tables) > 0))
+				if (!$smcFunc['db_select_db'] ($db_name, $db_connection))
 					$db_connection = null;
+				else
+				{
+					$tables=$smcFunc['db_list_tables']($db_name);
+					if (!(is_array($tables) && in_array($db_prefix . 'settings' , $tables)))
+						$db_connection = null;
+				}
 			}
+			else
+				$db_connection = null;
 		}
 	}
 }
