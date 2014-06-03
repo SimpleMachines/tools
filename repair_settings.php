@@ -251,22 +251,6 @@ function initialize_inputs()
 		ini_set('session.save_handler', 'files');
 	@session_start();
 	
-	// Add slashes, as long as they aren't already being added.
-
-	if (!function_exists('get_magic_quotes_gpc') || @get_magic_quotes_gpc() == 0)
-	{
-		foreach ($_POST as $k => $v)
-		{
-			if (is_array($v))
-				foreach ($v as $k2 => $v2)
-					$_POST[$k][$k2] = addslashes($v2);
-			else
-				$_POST[$k] = addslashes($v);
-		}
-	}
-
-/*
-	// Slashes as soo old-fashion...
 	if (function_exists('get_magic_quotes_gpc') && @get_magic_quotes_gpc() != 0)
 	{
 		foreach ($_POST as $k => $v)
@@ -281,11 +265,11 @@ function initialize_inputs()
 	{
 		if (is_array($v))
 			foreach ($v as $k2 => $v2)
-				$_POST[$k][$k2] = addcslashes($v2, '\'');
+				$_POST[$k][$k2] = addcslashes($v2, '\'\\');
 		else
-			$_POST[$k] = addcslashes($v, '\'');
+			$_POST[$k] = addcslashes($v, '\'\\');
 	}
-*/
+
 	// This is really quite simple; if ?delete is on the URL, delete the installer...
 	if (isset($_GET['delete']))
 	{
@@ -745,7 +729,7 @@ function guess_attachments_directories($id, $array_setting)
 {
 	global $smcFunc, $context;
 	static $usedDirs;
-
+	
 	if (empty($userdDirs))
 	{
 		$usedDirs = array();
@@ -880,6 +864,7 @@ function set_settings()
 	require(dirname(__FILE__) . '/Settings.php');
 
 	//We need to re-try the database settings, right?
+	$context['settings_test'] = 1;
 	initialize_inputs();
 	//if database settings are wrong, we will not try anything else!
 	if ($db_connection != true)
