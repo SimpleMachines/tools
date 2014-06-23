@@ -18,7 +18,7 @@ if (file_exists(dirname(__FILE__) . '/Settings.php'))
 // Initialize everything and load the language files.
 initialize_inputs();
 
-$txt['smf_repair_settings'] = 'SMF 2.x Settings Repair Tool';
+$txt['smf_repair_settings'] = 'SMF 2.0 Settings Repair Tool';
 $txt['smf11_repair_settings'] = 'SMF 1.x Settings Repair Tool';
 $txt['no_value'] = '<em style="font-weight: normal; color: red;">Value not found!</em>';
 $txt['default_value'] = 'Recommended value';
@@ -26,11 +26,13 @@ $txt['other_possible_value'] = 'Other possible value';
 $txt['no_default_value'] = 'No recommended value';
 $txt['save_settings'] = 'Save Settings';
 $txt['remove_hooks'] = 'Remove all hooks';
+$txt['remove_file'] = 'Remove this file. Careful, it may not work in all servers!';
 $txt['restore_all_settings'] = 'Restore all settings';
 $txt['not_writable'] = 'Settings.php cannot be written to by your webserver.  Please modify the permissions on this file to allow write access.';
 $txt['recommend_blank'] = '<em>(blank)</em>';
 $txt['database_settings_hidden'] = 'Some settings are not being shown because the database connection information is incorrect.<br />Check your database login details, table prefix and that the database actually contains your SMF tables.';
 $txt['no_sources'] = 'We were unable to detect your Sources folder. This is crucial for this tool to work. Please be sure it exists.';
+$txt['settings_saved'] = 'Your settings were saved. Please confirm all the paths and URLs below, and that your forum works.<br /><b>Make sure you remove this file!</b>';
 
 $txt['critical_settings'] = 'Critical Settings';
 $txt['critical_settings_info'] = 'These are the settings most likely to be screwing up your board, but try the things below (especially the path and URL ones) if these don\'t help.  You can click on the recommended value to use it.';
@@ -93,6 +95,16 @@ $txt['theme_path_url_settings_info'] = 'These are the paths and URLs to your SMF
 if (!empty($db_type) && isset($txt['db_' . $db_type]))
 	$txt['database_settings'] = $txt['db_' . $db_type] . ' ' . $txt['database_settings'];
 
+//Remove this file, maybe?	
+if (isset($_POST['remove_file']))
+{
+	@unlink(__FILE__);
+
+	// Redirect to index.php.
+	header('Location: http://' . (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT']) . dirname($_SERVER['PHP_SELF']) . '/index.php');
+	exit;
+}
+
 if (isset($_POST['submit']))
 	set_settings();
 
@@ -141,6 +153,13 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 			div.error_message
 			{
 				border: 2px dashed red;
+				background-color: #e1e1e1;
+				margin: 1ex 4ex;
+				padding: 1.5ex;
+			}
+			div.success_message
+			{
+				border: 2px dashed green;
 				background-color: #e1e1e1;
 				margin: 1ex 4ex;
 				padding: 1.5ex;
@@ -232,17 +251,23 @@ function initialize_inputs()
 		ini_set('session.save_handler', 'files');
 	@session_start();
 	
-	// Add slashes, as long as they aren't already being added.
-	if (!function_exists('get_magic_quotes_gpc') || @get_magic_quotes_gpc() == 0)
+	if (function_exists('get_magic_quotes_gpc') && @get_magic_quotes_gpc() != 0)
 	{
 		foreach ($_POST as $k => $v)
-		{
 			if (is_array($v))
 				foreach ($v as $k2 => $v2)
-					$_POST[$k][$k2] = addslashes($v2);
+					$_POST[$k][$k2] = stripslashes($v2);
 			else
-				$_POST[$k] = addslashes($v);
-		}
+				$_POST[$k] = stripslashes($v);
+	}
+
+	foreach ($_POST as $k => $v)
+	{
+		if (is_array($v))
+			foreach ($v as $k2 => $v2)
+				$_POST[$k][$k2] = addcslashes($v2, '\'\\');
+		else
+			$_POST[$k] = addcslashes($v, '\'\\');
 	}
 
 	// This is really quite simple; if ?delete is on the URL, delete the installer...
@@ -525,13 +550,20 @@ function show_settings()
 				list ($known_settings['database_settings']['db_prefix'][2]) = preg_replace('~log_topics$~', '', $smcFunc['db_fetch_row']($request));
 			$smcFunc['db_free_result']($request);
 		}
+		if (!empty($context['settings_saved']))
+		{
+			echo '
+				<div class="success_message" style="margin-bottom: 2ex;">
+					', $txt['settings_saved'], '
+				</div>';		
+		}
 	}
 	elseif (empty($show_db_settings))
 	{
 		echo '
 			<div class="error_message" style="margin-bottom: 2ex;">
 				', $txt['database_settings_hidden'], '
-			</div>';	
+			</div>';
 	}
 
 	echo '
@@ -684,6 +716,8 @@ function show_settings()
 				[<a href="javascript:restoreAll();">', $txt['restore_all_settings'], '</a>]
 				<input type="submit" name="submit" value="', $txt['save_settings'], '" class="button_submit" />', $context['is_legacy'] ? '' : '
 				<input type="submit" name="remove_hooks" value="' . $txt['remove_hooks'] . '" class="button_submit" />';
+	//In either case, an easy remove button? This has a long name in it, so let's break a line
+	echo 		'<br /><input type="submit" name="remove_file" value="' . $txt['remove_file'] . '" class="button_submit" />';
 
 	echo '
 				</div>
@@ -695,7 +729,7 @@ function guess_attachments_directories($id, $array_setting)
 {
 	global $smcFunc, $context;
 	static $usedDirs;
-
+	
 	if (empty($userdDirs))
 	{
 		$usedDirs = array();
@@ -830,6 +864,7 @@ function set_settings()
 	require(dirname(__FILE__) . '/Settings.php');
 
 	//We need to re-try the database settings, right?
+	$context['settings_test'] = 1;
 	initialize_inputs();
 	//if database settings are wrong, we will not try anything else!
 	if ($db_connection != true)
@@ -910,6 +945,8 @@ function set_settings()
 			$setString,
 			array('id_theme', 'id_member', 'variable')
 		);
+	//If we got here, all is good :)
+	$context['settings_saved'] = 1;
 }
 
 function remove_hooks()
@@ -967,229 +1004,243 @@ function smc_compat_initiate($db_server, $db_name, $db_user, $db_passwd, $db_pre
 	else
 		$db_prefix = is_numeric(substr($db_prefix, 0, 1)) ? $db_name . '.' . $db_prefix : '`' . $db_name . '`.' . $db_prefix;
 
-	// Some core functions.
-	function smf_db_replacement__callback($matches)
+	// Some core functions, but only once, yes?
+	if (!function_exists('smf_db_replacement__callback'))
 	{
-		global $db_callback, $user_info, $db_prefix;
-
-		list ($values, $connection) = $db_callback;
-
-		if ($matches[1] === 'db_prefix')
-			return $db_prefix;
-
-		if ($matches[1] === 'query_see_board')
-			return $user_info['query_see_board'];
-
-		if ($matches[1] === 'query_wanna_see_board')
-			return $user_info['query_wanna_see_board'];
-
-		if (!isset($matches[2]))
-			smf_db_error_backtrace('Invalid value inserted or no type specified.', '', E_USER_ERROR, __FILE__, __LINE__);
-
-		if (!isset($values[$matches[2]]))
-			smf_db_error_backtrace('The database value you\'re trying to insert does not exist: ' . htmlspecialchars($matches[2]), '', E_USER_ERROR, __FILE__, __LINE__);
-
-		$replacement = $values[$matches[2]];
-
-		switch ($matches[1])
+		function smf_db_replacement__callback($matches)
 		{
-			case 'int':
-				if (!is_numeric($replacement) || (string) $replacement !== (string) (int) $replacement)
-					smf_db_error_backtrace('Wrong value type sent to the database. Integer expected. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
-				return (string) (int) $replacement;
-			break;
+			global $db_callback, $user_info, $db_prefix;
 
-			case 'string':
-			case 'text':
-				return sprintf('\'%1$s\'', mysql_real_escape_string($replacement, $connection));
-			break;
+			list ($values, $connection) = $db_callback;
 
-			case 'array_int':
-				if (is_array($replacement))
-				{
-					if (empty($replacement))
-						smf_db_error_backtrace('Database error, given array of integer values is empty. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
+			if ($matches[1] === 'db_prefix')
+				return $db_prefix;
 
-					foreach ($replacement as $key => $value)
+			if ($matches[1] === 'query_see_board')
+				return $user_info['query_see_board'];
+
+			if ($matches[1] === 'query_wanna_see_board')
+				return $user_info['query_wanna_see_board'];
+
+			if (!isset($matches[2]))
+				smf_db_error_backtrace('Invalid value inserted or no type specified.', '', E_USER_ERROR, __FILE__, __LINE__);
+
+			if (!isset($values[$matches[2]]))
+				smf_db_error_backtrace('The database value you\'re trying to insert does not exist: ' . htmlspecialchars($matches[2]), '', E_USER_ERROR, __FILE__, __LINE__);
+
+			$replacement = $values[$matches[2]];
+
+			switch ($matches[1])
+			{
+				case 'int':
+					if (!is_numeric($replacement) || (string) $replacement !== (string) (int) $replacement)
+						smf_db_error_backtrace('Wrong value type sent to the database. Integer expected. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
+					return (string) (int) $replacement;
+				break;
+
+				case 'string':
+				case 'text':
+					return sprintf('\'%1$s\'', mysql_real_escape_string($replacement, $connection));
+				break;
+
+				case 'array_int':
+					if (is_array($replacement))
 					{
-						if (!is_numeric($value) || (string) $value !== (string) (int) $value)
-							smf_db_error_backtrace('Wrong value type sent to the database. Array of integers expected. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
+						if (empty($replacement))
+							smf_db_error_backtrace('Database error, given array of integer values is empty. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
 
-						$replacement[$key] = (string) (int) $value;
+						foreach ($replacement as $key => $value)
+						{
+							if (!is_numeric($value) || (string) $value !== (string) (int) $value)
+								smf_db_error_backtrace('Wrong value type sent to the database. Array of integers expected. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
+
+							$replacement[$key] = (string) (int) $value;
+						}
+
+						return implode(', ', $replacement);
 					}
+					else
+						smf_db_error_backtrace('Wrong value type sent to the database. Array of integers expected. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
 
-					return implode(', ', $replacement);
-				}
-				else
-					smf_db_error_backtrace('Wrong value type sent to the database. Array of integers expected. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
+				break;
 
-			break;
+				case 'array_string':
+					if (is_array($replacement))
+					{
+						if (empty($replacement))
+							smf_db_error_backtrace('Database error, given array of string values is empty. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
 
-			case 'array_string':
-				if (is_array($replacement))
-				{
-					if (empty($replacement))
-						smf_db_error_backtrace('Database error, given array of string values is empty. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
+						foreach ($replacement as $key => $value)
+							$replacement[$key] = sprintf('\'%1$s\'', mysql_real_escape_string($value, $connection));
 
-					foreach ($replacement as $key => $value)
-						$replacement[$key] = sprintf('\'%1$s\'', mysql_real_escape_string($value, $connection));
+						return implode(', ', $replacement);
+					}
+					else
+						smf_db_error_backtrace('Wrong value type sent to the database. Array of strings expected. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
+				break;
 
-					return implode(', ', $replacement);
-				}
-				else
-					smf_db_error_backtrace('Wrong value type sent to the database. Array of strings expected. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
-			break;
+				case 'date':
+					if (preg_match('~^(\d{4})-([0-1]?\d)-([0-3]?\d)$~', $replacement, $date_matches) === 1)
+						return sprintf('\'%04d-%02d-%02d\'', $date_matches[1], $date_matches[2], $date_matches[3]);
+					else
+						smf_db_error_backtrace('Wrong value type sent to the database. Date expected. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
+				break;
 
-			case 'date':
-				if (preg_match('~^(\d{4})-([0-1]?\d)-([0-3]?\d)$~', $replacement, $date_matches) === 1)
-					return sprintf('\'%04d-%02d-%02d\'', $date_matches[1], $date_matches[2], $date_matches[3]);
-				else
-					smf_db_error_backtrace('Wrong value type sent to the database. Date expected. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
-			break;
+				case 'float':
+					if (!is_numeric($replacement))
+						smf_db_error_backtrace('Wrong value type sent to the database. Floating point number expected. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
+					return (string) (float) $replacement;
+				break;
 
-			case 'float':
-				if (!is_numeric($replacement))
-					smf_db_error_backtrace('Wrong value type sent to the database. Floating point number expected. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
-				return (string) (float) $replacement;
-			break;
+				case 'identifier':
+					// Backticks inside identifiers are supported as of MySQL 4.1. We don't need them for SMF.
+					return '`' . strtr($replacement, array('`' => '', '.' => '')) . '`';
+				break;
 
-			case 'identifier':
-				// Backticks inside identifiers are supported as of MySQL 4.1. We don't need them for SMF.
-				return '`' . strtr($replacement, array('`' => '', '.' => '')) . '`';
-			break;
+				case 'raw':
+					return $replacement;
+				break;
 
-			case 'raw':
-				return $replacement;
-			break;
-
-			default:
-				smf_db_error_backtrace('Undefined type used in the database query. (' . $matches[1] . ':' . $matches[2] . ')', '', false, __FILE__, __LINE__);
-			break;
+				default:
+					smf_db_error_backtrace('Undefined type used in the database query. (' . $matches[1] . ':' . $matches[2] . ')', '', false, __FILE__, __LINE__);
+				break;
+			}
 		}
 	}
 
 	// Because this is just compat mode, this is good enough.
-	function smf_db_query($execute = true, $db_string, $db_values)
+	if (!function_exists('smf_db_query'))
 	{
-		global $db_callback, $db_connection;
-
-		// Only bother if there's something to replace.
-		if (strpos($db_string, '{') !== false)
+		function smf_db_query($execute = true, $db_string, $db_values)
 		{
-			// This is needed by the callback function.
-			$db_callback = array($db_values, $db_connection);
+			global $db_callback, $db_connection;
 
-			// Do the quoting and escaping
-			$db_string = preg_replace_callback('~{([a-z_]+)(?::([a-zA-Z0-9_-]+))?}~', 'smf_db_replacement__callback', $db_string);
+			// Only bother if there's something to replace.
+			if (strpos($db_string, '{') !== false)
+			{
+				// This is needed by the callback function.
+				$db_callback = array($db_values, $db_connection);
 
-			// Clear this global variable.
-			$db_callback = array();
+				// Do the quoting and escaping
+				$db_string = preg_replace_callback('~{([a-z_]+)(?::([a-zA-Z0-9_-]+))?}~', 'smf_db_replacement__callback', $db_string);
+
+				// Clear this global variable.
+				$db_callback = array();
+			}
+
+			// We actually make the query in compat mode.
+			if ($execute === false)
+				return $db_string;
+			return mysql_query($db_string, $db_connection);
 		}
-
-		// We actually make the query in compat mode.
-		if ($execute === false)
-			return $db_string;
-		return mysql_query($db_string, $db_connection);
 	}
 
 	// Insert some data...
-	function smf_db_insert($method = 'replace', $table, $columns, $data, $keys, $disable_trans = false)
+	if (!function_exists('smf_db_insert'))
 	{
-		global $smcFunc, $db_connection, $db_prefix;
-
-		// With nothing to insert, simply return.
-		if (empty($data))
-			return;
-
-		// Replace the prefix holder with the actual prefix.
-		$table = str_replace('{db_prefix}', $db_prefix, $table);
-
-		// Inserting data as a single row can be done as a single array.
-		if (!is_array($data[array_rand($data)]))
-			$data = array($data);
-
-		// Create the mold for a single row insert.
-		$insertData = '(';
-		foreach ($columns as $columnName => $type)
+		function smf_db_insert($method = 'replace', $table, $columns, $data, $keys, $disable_trans = false)
 		{
-			// Are we restricting the length?
-			if (strpos($type, 'string-') !== false)
-				$insertData .= sprintf('SUBSTRING({string:%1$s}, 1, ' . substr($type, 7) . '), ', $columnName);
-			else
-				$insertData .= sprintf('{%1$s:%2$s}, ', $type, $columnName);
+			global $smcFunc, $db_connection, $db_prefix;
+
+			// With nothing to insert, simply return.
+			if (empty($data))
+				return;
+
+			// Replace the prefix holder with the actual prefix.
+			$table = str_replace('{db_prefix}', $db_prefix, $table);
+
+			// Inserting data as a single row can be done as a single array.
+			if (!is_array($data[array_rand($data)]))
+				$data = array($data);
+
+			// Create the mold for a single row insert.
+			$insertData = '(';
+			foreach ($columns as $columnName => $type)
+			{
+				// Are we restricting the length?
+				if (strpos($type, 'string-') !== false)
+					$insertData .= sprintf('SUBSTRING({string:%1$s}, 1, ' . substr($type, 7) . '), ', $columnName);
+				else
+					$insertData .= sprintf('{%1$s:%2$s}, ', $type, $columnName);
+			}
+			$insertData = substr($insertData, 0, -2) . ')';
+
+			// Create an array consisting of only the columns.
+			$indexed_columns = array_keys($columns);
+
+			// Here's where the variables are injected to the query.
+			$insertRows = array();
+			foreach ($data as $dataRow)
+				$insertRows[] = smf_db_query(false, $insertData, array_combine($indexed_columns, $dataRow));
+
+			// Determine the method of insertion.
+			$queryTitle = ($method == 'replace') ? 'REPLACE' : (($method == 'ignore') ? 'INSERT IGNORE' : 'INSERT');
+
+			// Do the insert.
+			$smcFunc['db_query'](true, '
+				' . $queryTitle . ' INTO ' . $table . '(`' . implode('`, `', $indexed_columns) . '`)
+				VALUES
+					' . implode(',
+					', $insertRows),
+				array(
+					'security_override' => true,
+				)
+			);
 		}
-		$insertData = substr($insertData, 0, -2) . ')';
-
-		// Create an array consisting of only the columns.
-		$indexed_columns = array_keys($columns);
-
-		// Here's where the variables are injected to the query.
-		$insertRows = array();
-		foreach ($data as $dataRow)
-			$insertRows[] = smf_db_query(false, $insertData, array_combine($indexed_columns, $dataRow));
-
-		// Determine the method of insertion.
-		$queryTitle = ($method == 'replace') ? 'REPLACE' : (($method == 'ignore') ? 'INSERT IGNORE' : 'INSERT');
-
-		// Do the insert.
-		$smcFunc['db_query'](true, '
-			' . $queryTitle . ' INTO ' . $table . '(`' . implode('`, `', $indexed_columns) . '`)
-			VALUES
-				' . implode(',
-				', $insertRows),
-			array(
-				'security_override' => true,
-			)
-		);
 	}
 
 	// This function tries to work out additional error information from a back trace.
-	function smf_db_error_backtrace($error_message, $log_message = '', $error_type = false, $file = null, $line = null)
+	if (!function_exists('smf_db_error_backtrace'))
 	{
-		if (empty($log_message))
-			$log_message = $error_message;
+		function smf_db_error_backtrace($error_message, $log_message = '', $error_type = false, $file = null, $line = null)
+		{
+			if (empty($log_message))
+				$log_message = $error_message;
 
-		// A special case - we want the file and line numbers for debugging.
-		if ($error_type == 'return')
-			return array($file, $line);
+			// A special case - we want the file and line numbers for debugging.
+			if ($error_type == 'return')
+				return array($file, $line);
 
-		// Is always a critical error.
-		if (function_exists('log_error'))
-			log_error($log_message, 'critical', $file, $line);
+			// Is always a critical error.
+			if (function_exists('log_error'))
+				log_error($log_message, 'critical', $file, $line);
 
-		if ($error_type)
-			trigger_error($error_message . ($line !== null ? '<em>(' . basename($file) . '-' . $line . ')</em>' : ''), $error_type);
-		else
-			trigger_error($error_message . ($line !== null ? '<em>(' . basename($file) . '-' . $line . ')</em>' : ''));
+			if ($error_type)
+				trigger_error($error_message . ($line !== null ? '<em>(' . basename($file) . '-' . $line . ')</em>' : ''), $error_type);
+			else
+				trigger_error($error_message . ($line !== null ? '<em>(' . basename($file) . '-' . $line . ')</em>' : ''));
+		}
 	}
 
 	// Returns all tables
-	function smf_db_list_tables($db = false, $filter = false)
+	if (!function_exists('smf_db_list_tables'))
 	{
-		global $db_name, $smcFunc;
+		function smf_db_list_tables($db = false, $filter = false)
+		{
+			global $db_name, $smcFunc;
 
-		$db = $db == false ? $db_name : $db;
-		$db = trim($db);
-		$filter = $filter == false ? '' : ' LIKE \'' . $filter . '\'';
+			$db = $db == false ? $db_name : $db;
+			$db = trim($db);
+			$filter = $filter == false ? '' : ' LIKE \'' . $filter . '\'';
 
-		$request = $smcFunc['db_query'](true, '
-			SHOW TABLES
-			FROM `{raw:db}`
-			{raw:filter}',
-			array(
-				'db' => $db[0] == '`' ? strtr($db, array('`' => '')) : $db,
-				'filter' => $filter,
-			)
-		);
-		$tables = array();
-		while ($row = $smcFunc['db_fetch_row']($request))
-			$tables[] = $row[0];
-		$smcFunc['db_free_result']($request);
+			$request = $smcFunc['db_query'](true, '
+				SHOW TABLES
+				FROM `{raw:db}`
+				{raw:filter}',
+				array(
+					'db' => $db[0] == '`' ? strtr($db, array('`' => '')) : $db,
+					'filter' => $filter,
+				)
+			);
+			$tables = array();
+			while ($row = $smcFunc['db_fetch_row']($request))
+				$tables[] = $row[0];
+			$smcFunc['db_free_result']($request);
 
-		return $tables;
+			return $tables;
+		}
 	}
 
-	// This function tries to work out additional error information from a back trace.
 	// Now, go functions, spread your love.
 	$smcFunc['db_free_result'] = 'mysql_free_result';
 	$smcFunc['db_fetch_row'] = 'mysql_fetch_row';
