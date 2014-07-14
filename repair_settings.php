@@ -33,6 +33,7 @@ $txt['recommend_blank'] = '<em>(blank)</em>';
 $txt['database_settings_hidden'] = 'Some settings are not being shown because the database connection information is incorrect.<br />Check your database login details, table prefix and that the database actually contains your SMF tables.';
 $txt['no_sources'] = 'We were unable to detect your Sources folder. This is crucial for this tool to work. Please be sure it exists.';
 $txt['settings_saved'] = 'Your settings were saved. Please confirm all the paths and URLs below, and that your forum works.<br /><b>Make sure you remove this file!</b>';
+$txt['hooks_removed'] = 'All your existing hooks were removed from the database. Do note that existing MODs that rely on hooks will not work anymore.<br /><b>Make sure you remove this file!</b>';
 
 $txt['critical_settings'] = 'Critical Settings';
 $txt['critical_settings_info'] = 'These are the settings most likely to be screwing up your board, but try the things below (especially the path and URL ones) if these don\'t help.  You can click on the recommended value to use it.';
@@ -557,6 +558,14 @@ function show_settings()
 					', $txt['settings_saved'], '
 				</div>';		
 		}
+		if (!empty($context['hooks_removed']))
+		{
+			echo '
+				<div class="success_message" style="margin-bottom: 2ex;">
+					', $txt['hooks_removed'], '
+				</div>';		
+		}
+		
 	}
 	elseif (empty($show_db_settings))
 	{
@@ -951,7 +960,7 @@ function set_settings()
 
 function remove_hooks()
 {
-	global $smcFunc;
+	global $smcFunc, $sourcedir, $context;
 
 	$smcFunc['db_query']('', '
 		DELETE FROM {db_prefix}settings
@@ -962,7 +971,11 @@ function remove_hooks()
 	);
 
 	// Now fixing the cache...
+	require_once($sourcedir . '/Load.php');
 	cache_put_data('modsettings', null, 0);
+	
+	//Let's say we did it
+	$context['hooks_removed'] = 1;
 }
 
 // Compat mode!
