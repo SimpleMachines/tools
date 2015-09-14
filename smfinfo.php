@@ -79,6 +79,7 @@ function load_txt_strings()
 	$txt['unknown_db_version'] = 'Database Character Set Unknown';
 	$txt['support_versions_current'] = 'Current SMF Info version';
 	$txt['support_versions_forum'] = 'Your SMF Info version';
+	$txt['previousCharacterSet'] = 'Previous character set';
 
 
 	// PHP Specific Info
@@ -175,6 +176,7 @@ $context['smfinfo'] = array (
 	'log_pruning' => get_smf_setting('pruningOptions', 'on'),
 	'sef_urls' => get_smf_setting('queryless_urls'),
 	'compressed_output' => get_smf_setting('enableCompressedOutput'),
+	'previousCharacterSet' => get_smf_setting('previousCharacterSet'),
 );
 
 $context['phpinfo'] = array (
