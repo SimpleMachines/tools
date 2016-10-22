@@ -93,6 +93,7 @@ $txt['boardurl'] = 'Forum URL';
 $txt['boarddir'] = 'Forum Directory';
 $txt['sourcedir'] = 'Sources Directory';
 $txt['tasksdir'] = 'Tasks Directory';
+$txt['packagesdir'] = 'Packages Directory';
 $txt['attachmentUploadDir'] = 'Attachment Directory';
 $txt['avatar_url'] = 'Avatar URL';
 $txt['avatar_directory'] = 'Avatar Directory';
@@ -488,6 +489,7 @@ function show_settings()
 			'boarddir' => array('flat', 'string'),
 			'sourcedir' => array('flat', 'string'),
 			'tasksdir' => array('flat', 'string'),
+			'packagesdir' => array('flat', 'string'),
 			'attachmentUploadDir' => array('db', 'array_string'),
 			'avatar_url' => array('db', 'string'),
 			'avatar_directory' => array('db', 'string'),
@@ -548,6 +550,11 @@ function show_settings()
 	{
 		$known_settings['path_url_settings']['smileys_url'][2] = $url . '/Smileys';
 		$known_settings['path_url_settings']['smileys_dir'][2] = realpath(dirname(__FILE__) . '/Smileys');
+	}
+
+	if ($context['smfVersion'] == '2.1' && file_exists(dirname(__FILE__) . '/Packages'))
+	{
+		$known_settings['path_url_settings']['packagesdir'][2] = realpath(dirname(__FILE__) . '/Packages');
 	}
 
 /*	if (file_exists(dirname(__FILE__) . '/Themes/default'))
