@@ -5,10 +5,10 @@
  *
  * @package SMF
  * @author Simple Machines
- * @copyright 2011 Simple Machines
+ * @copyright 2016 Simple Machines
  * @license http://www.simplemachines.org/about/smf/license.php BSD
  *
- * @version 2.0
+ * @version 2.1
  */
 
 // We need the Settings.php info for database stuff.
@@ -18,14 +18,13 @@ if (file_exists(dirname(__FILE__) . '/Settings.php'))
 // Initialize everything and load the language files.
 initialize_inputs();
 
-$txt['smf_repair_settings'] = 'SMF 2.0 Settings Repair Tool';
+$txt['smf_repair_settings'] = 'SMF %1$s Settings Repair Tool';
 $txt['smf11_repair_settings'] = 'SMF 1.x Settings Repair Tool';
 $txt['no_value'] = '<em style="font-weight: normal; color: red;">Value not found!</em>';
 $txt['default_value'] = 'Recommended value';
 $txt['other_possible_value'] = 'Other possible value';
 $txt['no_default_value'] = 'No recommended value';
 $txt['save_settings'] = 'Save Settings';
-$txt['remove_hooks'] = 'Remove all hooks';
 $txt['remove_file'] = 'Remove this file. Careful, it may not work in all servers!';
 $txt['restore_all_settings'] = 'Restore all settings';
 $txt['not_writable'] = 'Settings.php cannot be written to by your webserver.  Please modify the permissions on this file to allow write access.';
@@ -33,7 +32,11 @@ $txt['recommend_blank'] = '<em>(blank)</em>';
 $txt['database_settings_hidden'] = 'Some settings are not being shown because the database connection information is incorrect.<br />Check your database login details, table prefix and that the database actually contains your SMF tables.';
 $txt['no_sources'] = 'We were unable to detect your Sources folder. This is crucial for this tool to work. Please be sure it exists.';
 $txt['settings_saved'] = 'Your settings were saved. Please confirm all the paths and URLs below, and that your forum works.<br /><b>Make sure you remove this file!</b>';
+
+$txt['remove_hooks'] = 'Remove all hooks';
+$txt['disable_hooks'] = 'Disable all hooks';
 $txt['hooks_removed'] = 'All your existing hooks were removed from the database. Do note that existing MODs that rely on hooks will not work anymore.<br /><b>Make sure you remove this file!</b>';
+$txt['hooks_disabled'] = 'All your existing hooks were disabled. Do note that existing MODs that rely on hooks will not work anymore. You can enable these again from Forum Maintenance<br /><b>Make sure you remove this file!</b>';
 
 $txt['critical_settings'] = 'Critical Settings';
 $txt['critical_settings_info'] = 'These are the settings most likely to be screwing up your board, but try the things below (especially the path and URL ones) if these don\'t help.  You can click on the recommended value to use it.';
@@ -74,12 +77,21 @@ $txt['db_mysql'] = 'MySQL';
 $txt['db_postgresql'] = 'PostgreSQL';
 $txt['db_sqlite'] = 'SQLite';
 
+$txt['cache_settings'] = 'Cache Settings';
+$txt['cache_settings_info'] = 'These are the cache settings to your SMF installation, and can cause big problems when they are wrong.';
+$txt['cache_accelerator'] = 'Cache System';
+$txt['cache_accelerator_help'] = 'Choose: apc, eaccelerator, memcache, mmcache, output_cache, smf, or xcache';
+$txt['cache_enable'] = 'Enable Caching';
+$txt['cache_enable0'] = 'Off';
+$txt['cache_enable1'] = 'On (recommended)';
+$txt['cachedir'] = 'Cache Directory';
+$txt['cache_memcached'] = 'Memcache Servers';
+
 $txt['path_url_settings'] = 'Paths &amp; URLs';
 $txt['path_url_settings_info'] = 'These are the paths and URLs to your SMF installation, and can cause big problems when they are wrong.  Sorry, there are a lot of them.';
 $txt['boardurl'] = 'Forum URL';
 $txt['boarddir'] = 'Forum Directory';
 $txt['sourcedir'] = 'Sources Directory';
-$txt['cachedir'] = 'Cache Directory';
 $txt['attachmentUploadDir'] = 'Attachment Directory';
 $txt['avatar_url'] = 'Avatar URL';
 $txt['avatar_directory'] = 'Avatar Directory';
@@ -98,7 +110,7 @@ $txt['theme_path_url_settings_info'] = 'These are the paths and URLs to your SMF
 if (!empty($db_type) && isset($txt['db_' . $db_type]))
 	$txt['database_settings'] = $txt['db_' . $db_type] . ' ' . $txt['database_settings'];
 
-//Remove this file, maybe?	
+//Remove this file, maybe?
 if (isset($_POST['remove_file']))
 {
 	@unlink(__FILE__);
@@ -124,7 +136,9 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 <html xmlns="http://www.w3.org/1999/xhtml">
 	<head>
 		<meta name="robots" content="noindex" />
-		<title>', $context['is_legacy'] ? $txt['smf11_repair_settings'] : $txt['smf_repair_settings'], '</title>
+		<title>', isset($context['smfVersion']) ? sprintf($txt['smf_repair_settings'], $context['smfVersion']) : 
+$txt['smf11_repair_settings'], '</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 		<script type="text/javascript" src="Themes/default/scripts/script.js"></script>
 		<style type="text/css">
 			body
@@ -232,7 +246,8 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 	<body>
 		<div id="header">
 			<a href="http://www.simplemachines.org/" target="_blank"><img src="' . $smflogo . '" style="width: 250px; float: right;" alt="Simple Machines" border="0" /></a>
-			<div>', $context['is_legacy'] ? $txt['smf11_repair_settings'] : $txt['smf_repair_settings'], '</div>
+			<div>', isset($context['smfVersion']) ? sprintf($txt['smf_repair_settings'], $context['smfVersion']) : 
+$txt['smf11_repair_settings'], '</div>
 		</div>
 		<div id="content">';
 
@@ -248,12 +263,13 @@ function initialize_inputs()
 	global $smcFunc, $db_connection, $sourcedir, $db_server, $db_name, $db_user, $db_passwd, $db_prefix, $db_type, $context, $sources_exist, $sources_found_path;
 
 	// Turn off magic quotes runtime and enable error reporting.
-	@set_magic_quotes_runtime(0);
+	if (function_exists('set_magic_quotes_runtime') && strnatcmp(phpversion(),'5.3.0') < 0)
+		@set_magic_quotes_runtime(0);
 	error_reporting(E_ALL);
 	if (ini_get('session.save_handler') == 'user')
 		ini_set('session.save_handler', 'files');
 	@session_start();
-	
+
 	if (function_exists('get_magic_quotes_gpc') && @get_magic_quotes_gpc() != 0)
 	{
 		foreach ($_POST as $k => $v)
@@ -285,6 +301,7 @@ function initialize_inputs()
 
 	$db_connection = false;
 	$sources_exist = false;
+	$context['smfVersion'] = '1.1';
 	$sources_found_path = '';
 	if (isset($sourcedir) && (file_exists(dirname(__FILE__) . '/Sources/Load.php')))
 		$sources_exist = true;
@@ -295,7 +312,7 @@ function initialize_inputs()
 		$sources_found_path = $sourcedir;
 		$sources_exist = !empty($sourcedir);
 	}
-	
+
 	if ($sources_exist)
 	{
 		if (!defined('SMF'))
@@ -305,7 +322,7 @@ function initialize_inputs()
 			$smcFunc = array();
 
 		// Default the database type to MySQL.
-		if (empty($db_type) || !file_exists($sourcedir . '/Subs-Db-' . $db_type . '.php') || ($db_type == 'mysqli'))
+		if (empty($db_type) || !file_exists($sourcedir . '/Subs-Db-' . $db_type . '.php'))
 			$db_type = 'mysql';
 
 		//require_once($sourcedir . '/Load.php');
@@ -313,7 +330,15 @@ function initialize_inputs()
 
 		// compat mode. Active!
 		$context['is_legacy'] = true;
-		if (!file_exists($sourcedir . '/Subs-Db-' . $db_type . '.php') && $db_type == 'mysql')
+
+		// Try to detect if we even have the database functions..
+		if (
+			($db_type == 'mysql' && !function_exists('mysql_connect')) ||
+			($db_type == 'myqli' && !function_exists('mysqli_connect')) ||
+			($db_type == 'postgresql' && !function_exists('pg_pconnect'))
+		)
+			$db_connection = null;
+		elseif (!file_exists($sourcedir . '/Subs-Db-' . $db_type . '.php') && $db_type == 'mysql')
 		{
 			$db_connection = smc_compat_initiate($db_server, $db_name, $db_user, $db_passwd, $db_prefix, array('non_fatal' => true));
 		}
@@ -321,8 +346,19 @@ function initialize_inputs()
 		{
 			// Far as I know, this is 2.0.
 			$context['is_legacy'] = false;
+			$context['smfVersion'] = '2.0';
+
+			// Try to see if this is 2.1.  Maybe include more checks.
+			if (file_exists($sourcedir . '/Class-TOTP.php'))
+				$context['smfVersion'] = '2.1';
+
+			// We should try to use the proper extension function if at all possible.
 			require_once($sourcedir . '/Subs-Db-' . $db_type . '.php');
-			require_once($sourcedir . '/DbExtra-' . $db_type . '.php');
+			if (function_exists('db_extend'))
+				db_extend('extra');
+			else
+				require_once($sourcedir . '/DbExtra-' . $db_type . '.php');
+
 			$db_connection = smf_db_initiate($db_server, $db_name, $db_user, $db_passwd, $db_prefix, array('non_fatal' => true));
 			db_extra_init();
 			//Fixes error with $db_connection not false if database name is incorrect. This is because the connection is established
@@ -375,11 +411,15 @@ function show_settings()
 					$settings[$match[1]] = $settings['boarddir'] . '/Sources';
 				elseif ($match[3] == 'dirname(__FILE__) . \'/cache\'')
 					$settings[$match[1]] = dirname(__FILE__) . '/cache';
+				// Values of 1, true and false seem to create a $mach[4].  This gets around this until a better regex can be found.
+				elseif (isset($match[4]) && in_array($match[4], array('0', '1', '2', 'false', 'true')))
+					$settings[$match[1]] = $match[4];
 				else
 					$settings[$match[1]] = $match[3];
 			}
 		}
 	}
+
 	if ($db_connection == true)
 	{
 		$request = $smcFunc['db_query'](true, '
@@ -391,7 +431,13 @@ function show_settings()
 			$db_connection
 		);
 		while ($row = $smcFunc['db_fetch_assoc']($request))
+		{
+			// Skip this setting on 2.1.
+			if ($context['smfVersion'] == '2.1' && $row['variable'] == 'cache_enable')
+				continue;
+
 			$settings[$row['variable']] = $row['value'];
+		}
 		$smcFunc['db_free_result']($request);
 
 		// Load all the themes.
@@ -440,7 +486,6 @@ function show_settings()
 			'boardurl' => array('flat', 'string'),
 			'boarddir' => array('flat', 'string'),
 			'sourcedir' => array('flat', 'string'),
-			'cachedir' => array('flat', 'string'),
 			'attachmentUploadDir' => array('db', 'array_string'),
 			'avatar_url' => array('db', 'string'),
 			'avatar_directory' => array('db', 'string'),
@@ -449,25 +494,22 @@ function show_settings()
 			'smileys_url' => array('db', 'string'),
 			'smileys_dir' => array('db', 'string'),
 		),
+		'cache_settings' => array(
+			'cache_accelerator' => array('flat', 'string'),
+			'cache_enable' => array('flat', 'int', 1),
+			'cachedir' => array('flat', 'string'),
+			'cache_memcached' => array('flat', 'string')
+		),
 		'theme_path_url_settings' => array(),
 	);
 
 	// 1.x didn't have ssi_x, nor cachedir
 	if ($context['is_legacy'])
-	{
-// 		if (empty($known_settings['database_settings']['ssi_db_user']))
-			unset($known_settings['database_settings']['ssi_db_user']);
-// 		if (empty($known_settings['database_settings']['ssi_db_passwd']))
-			unset($known_settings['database_settings']['ssi_db_passwd']);
-// 		if (empty($known_settings['path_url_settings']['cachedir']))
-			unset($known_settings['path_url_settings']['cachedir']);
-	}
-	else
-	{
-		// !!! Multiple Attachment Dirs not supported as yet, so hide this field
-// 		if (empty($known_settings['path_url_settings']['attachmentUploadDir']))
-// 			unset($known_settings['path_url_settings']['attachmentUploadDir']);
-	}
+		unset($known_settings['database_settings']['ssi_db_user'], $known_settings['database_settings']['ssi_db_passwd'], $known_settings['cache_settings']['cachedir']);
+
+	// These settings didn't exist in 2.0 or 1.1
+	if ($context['smfVersion'] != '2.1')
+		unset($known_settings['cache_settings']['cache_accelerator'], $known_settings['cache_settings']['cache_enable'], $known_settings['cache_settings']['cache_memcached']);
 
 	// Let's assume we don't want to change the current theme
 	$settings['theme_default'] = 0;
@@ -482,8 +524,8 @@ function show_settings()
 	elseif (!empty($sources_found_path))
 		$known_settings['path_url_settings']['sourcedir'][2] = realpath($sources_found_path);
 
-	if (file_exists(dirname(__FILE__) . '/cache'))
-		$known_settings['path_url_settings']['cachedir'][2] = realpath(dirname(__FILE__) . '/cache');
+	if (file_exists(dirname(__FILE__) . '/cache') && isset($known_settings['cache_settings']['cachedir']))
+		$known_settings['cache_settings']['cachedir'][2] = realpath(dirname(__FILE__) . '/cache');
 
 	if (file_exists(dirname(__FILE__) . '/avatars'))
 	{
@@ -538,13 +580,13 @@ function show_settings()
 			$txt['theme_' . $id . '_theme_dir'] = $theme['name'] . ' Directory';
 		}
 	}
-	
+
 	if (!$sources_exist)
 	{
 		echo '
 			<div class="error_message" style="margin-bottom: 2ex;">
 				', $txt['no_sources'], '
-			</div>';	
+			</div>';
 	}
 
 	if ($db_connection == true)
@@ -566,16 +608,16 @@ function show_settings()
 			echo '
 				<div class="success_message" style="margin-bottom: 2ex;">
 					', $txt['settings_saved'], '
-				</div>';		
+				</div>';
 		}
 		if (!empty($context['hooks_removed']))
 		{
 			echo '
 				<div class="success_message" style="margin-bottom: 2ex;">
-					', $txt['hooks_removed'], '
-				</div>';		
+					', $txt['hooks_' . ($context['smfVersion'] == '2.1' ? 'disabled' : 'removed')], '
+				</div>';
 		}
-		
+
 	}
 	elseif (empty($show_db_settings))
 	{
@@ -648,6 +690,9 @@ function show_settings()
 				echo '
 								<input type="text" name="', $info[0], 'settings[', $setting, ']" id="', $setting, '" value="', isset($settings[$setting]) ? htmlspecialchars($settings[$setting]) : '', '" size="', $settings_section == 'path_url_settings' || $settings_section == 'theme_path_url_settings' ? '60" style="width: 80%;' : '30', '" class="input_text" />';
 
+				if (isset($txt[$setting . '_help']))
+					echo '<div style="font-size: smaller;">', $txt[$setting . '_help'], '</div>';
+
 				if (isset($info[2]))
 					echo '
 								<div style="font-size: smaller;">', $txt['default_value'], ': &quot;<strong><a href="javascript:void(0);" id="', $setting, '_default" onclick="document.getElementById(\'', $setting, '\').value = ', $info[2] == '' ? '\'\';">' . $txt['recommend_blank'] : 'getInnerHTML(this);">' . $info[2], '</a></strong>&quot;.</div>',
@@ -657,7 +702,9 @@ function show_settings()
 			}
 			elseif ($info[1] == 'array_string')
 			{
-				if (!is_array($settings[$setting]))
+				if (!is_array($settings[$setting]) && $context['smfVersion'] == '2.1')
+					$array_settings = json_decode($settings[$setting], true);
+				if (!is_array($array_settings) && !is_array($settings[$setting]))
 					$array_settings = @unserialize($settings[$setting]);
 				if (!is_array($array_settings))
 					$array_settings = array($settings[$setting]);
@@ -731,10 +778,16 @@ function show_settings()
 		echo '
 				<input type="submit" name="submit" value="', $txt['save_settings'], '" disabled="disabled" class="button_submit" /><br />', $txt['not_writable'];
 	else
+	{
 		echo '
 				[<a href="javascript:restoreAll();">', $txt['restore_all_settings'], '</a>]
-				<input type="submit" name="submit" value="', $txt['save_settings'], '" class="button_submit" />', $context['is_legacy'] ? '' : '
-				<input type="submit" name="remove_hooks" value="' . $txt['remove_hooks'] . '" class="button_submit" />';
+				<input type="submit" name="submit" value="', $txt['save_settings'], '" class="button_submit" />';
+
+		if (!$context['is_legacy'])
+			echo '
+				<input type="submit" name="remove_hooks" value="' . $txt[($context['smfVersion'] == '2.1' ? 'disable' : 'remove') . '_hooks'] . '" class="button_submit" />';
+	}
+
 	//In either case, an easy remove button? This has a long name in it, so let's break a line
 	echo 		'<br /><input type="submit" name="remove_file" value="' . $txt['remove_file'] . '" class="button_submit" />';
 
@@ -748,7 +801,7 @@ function guess_attachments_directories($id, $array_setting)
 {
 	global $smcFunc, $context;
 	static $usedDirs;
-	
+
 	if (empty($userdDirs))
 	{
 		$usedDirs = array();
@@ -859,7 +912,12 @@ function set_settings()
 			if (strncasecmp($settingsArray[$i], '$' . $var, 1 + strlen($var)) == 0)
 			{
 				$comment = strstr($settingsArray[$i], '#');
-				$settingsArray[$i] = '$' . $var . ' = \'' . $val . '\';' . ($comment != '' ? "\t\t" . $comment : '');
+
+				// Ints, should be ints, not strings.  Bools too.
+				if (in_array($val, array('0', '1', '2', 'true', 'false')))
+					$settingsArray[$i] = '$' . $var . ' = ' . $val . ';' . ($comment != '' ? "\t\t" . $comment : '');
+				else
+					$settingsArray[$i] = '$' . $var . ' = \'' . $val . '\';' . ($comment != '' ? "\t\t" . $comment : '');
 			}
 		}
 	}
@@ -914,8 +972,13 @@ function set_settings()
 			}
 	}
 
+	// In SMF 2.1, its always an array.
+	if ($context['smfVersion'] == '2.1')
+	{
+		$setString[] = array('attachmentUploadDir', json_encode($attach_dirs));
+	}
 	// Only one dir...or maybe nothing at all
-	if (count($attach_dirs) > 1)
+	elseif (count($attach_dirs) > 1)
 	{
 		$setString[] = array('attachmentUploadDir', @serialize($attach_dirs));
 		// If we want to (re)set currentAttachmentUploadDir here is a good place
@@ -937,7 +1000,7 @@ function set_settings()
 		$setString[] = array('attachmentUploadDir', '');
 		$setString[] = array('currentAttachmentUploadDir', 0);
 	}
-	
+
 	if (!empty($setString))
 		$smcFunc['db_insert']('replace',
 			'{db_prefix}settings',
@@ -972,18 +1035,32 @@ function remove_hooks()
 {
 	global $smcFunc, $sourcedir, $context;
 
-	$smcFunc['db_query']('', '
-		DELETE FROM {db_prefix}settings
-		WHERE variable LIKE {string:variable}',
-		array(
-			'variable' => 'integrate_%'
-		)
-	);
+	// For SMF 2.1, we can just disable them.
+	if ($context['smfVersion'] == '2.1')
+		$smcFunc['db_query']('', '
+			UPDATE {db_prefix}settings
+			SET value = CONCAT(value, {string:disable})
+			WHERE variable LIKE {string:variable}
+				AND value NOT LIKE {string:disableMatch}',
+			array(
+				'disable' => '!',
+				'variable' => 'integrate_%',
+				'disableMatch' => '%!',
+			)
+		);
+	else
+		$smcFunc['db_query']('', '
+			DELETE FROM {db_prefix}settings
+			WHERE variable LIKE {string:variable}',
+			array(
+				'variable' => 'integrate_%'
+			)
+		);
 
 	// Now fixing the cache...
 	require_once($sourcedir . '/Load.php');
 	cache_put_data('modsettings', null, 0);
-	
+
 	//Let's say we did it
 	$context['hooks_removed'] = 1;
 }
@@ -1284,7 +1361,7 @@ function findSources()
 	$basedir = dirname(__FILE__); //Our location :)
 	$dirs = array();
 	$dir = dir($basedir);
-	
+
 	//All our folders
 	while ($line = $dir->read())
 	{
@@ -1296,7 +1373,7 @@ function findSources()
 			$files[] = $line;
 	}
 	$dir->close();
-	
+
 	foreach ($dirs as $key => $value) //Let's find Load.php!!!
 	{
 		//Files in this folder
