@@ -92,6 +92,7 @@ $txt['path_url_settings_info'] = 'These are the paths and URLs to your SMF insta
 $txt['boardurl'] = 'Forum URL';
 $txt['boarddir'] = 'Forum Directory';
 $txt['sourcedir'] = 'Sources Directory';
+$txt['tasksdir'] = 'Tasks Directory';
 $txt['attachmentUploadDir'] = 'Attachment Directory';
 $txt['avatar_url'] = 'Avatar URL';
 $txt['avatar_directory'] = 'Avatar Directory';
@@ -486,6 +487,7 @@ function show_settings()
 			'boardurl' => array('flat', 'string'),
 			'boarddir' => array('flat', 'string'),
 			'sourcedir' => array('flat', 'string'),
+			'tasksdir' => array('flat', 'string'),
 			'attachmentUploadDir' => array('db', 'array_string'),
 			'avatar_url' => array('db', 'string'),
 			'avatar_directory' => array('db', 'string'),
@@ -505,7 +507,7 @@ function show_settings()
 
 	// 1.x didn't have ssi_x, nor cachedir
 	if ($context['is_legacy'])
-		unset($known_settings['database_settings']['ssi_db_user'], $known_settings['database_settings']['ssi_db_passwd'], $known_settings['cache_settings']['cachedir']);
+		unset($known_settings['database_settings']['ssi_db_user'], $known_settings['database_settings']['ssi_db_passwd'], $known_settings['cache_settings']['cachedir'], $known_settings['path_url_settings']['custom_avatar_url'], $known_settings['path_url_settings']['custom_avatar_dir']);
 
 	// These settings didn't exist in 2.0 or 1.1
 	if ($context['smfVersion'] != '2.1')
@@ -524,6 +526,9 @@ function show_settings()
 	elseif (!empty($sources_found_path))
 		$known_settings['path_url_settings']['sourcedir'][2] = realpath($sources_found_path);
 
+	if ($context['smfVersion'] == '2.1' && file_exists(dirname(__FILE__) . '/Sources/tasks'))
+		$known_settings['path_url_settings']['tasksdir'][2] = realpath(dirname(__FILE__) . '/Sources/tasks');
+
 	if (file_exists(dirname(__FILE__) . '/cache') && isset($known_settings['cache_settings']['cachedir']))
 		$known_settings['cache_settings']['cachedir'][2] = realpath(dirname(__FILE__) . '/cache');
 
@@ -533,7 +538,7 @@ function show_settings()
 		$known_settings['path_url_settings']['avatar_directory'][2] = realpath(dirname(__FILE__) . '/avatars');
 	}
 
-	if (file_exists(dirname(__FILE__) . '/custom_avatar'))
+	if (!$context['is_legacy'] && file_exists(dirname(__FILE__) . '/custom_avatar'))
 	{
 		$known_settings['path_url_settings']['custom_avatar_url'][2] = $url . '/custom_avatar';
 		$known_settings['path_url_settings']['custom_avatar_dir'][2] = realpath(dirname(__FILE__) . '/custom_avatar');
