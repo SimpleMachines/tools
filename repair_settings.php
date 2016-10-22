@@ -83,6 +83,8 @@ $txt['cachedir'] = 'Cache Directory';
 $txt['attachmentUploadDir'] = 'Attachment Directory';
 $txt['avatar_url'] = 'Avatar URL';
 $txt['avatar_directory'] = 'Avatar Directory';
+$txt['custom_avatar_url'] = 'Custom Avatar URL';
+$txt['custom_avatar_dir'] = 'Custom Avatar Directory';
 $txt['smileys_url'] = 'Smileys URL';
 $txt['smileys_dir'] = 'Smileys Directory';
 $txt['theme_url'] = 'Default Theme URL';
@@ -442,6 +444,8 @@ function show_settings()
 			'attachmentUploadDir' => array('db', 'array_string'),
 			'avatar_url' => array('db', 'string'),
 			'avatar_directory' => array('db', 'string'),
+			'custom_avatar_url' => array('db', 'string'),
+			'custom_avatar_dir' => array('db', 'string'),
 			'smileys_url' => array('db', 'string'),
 			'smileys_dir' => array('db', 'string'),
 		),
@@ -485,6 +489,12 @@ function show_settings()
 	{
 		$known_settings['path_url_settings']['avatar_url'][2] = $url . '/avatars';
 		$known_settings['path_url_settings']['avatar_directory'][2] = realpath(dirname(__FILE__) . '/avatars');
+	}
+
+	if (file_exists(dirname(__FILE__) . '/custom_avatar'))
+	{
+		$known_settings['path_url_settings']['custom_avatar_url'][2] = $url . '/custom_avatar';
+		$known_settings['path_url_settings']['custom_avatar_dir'][2] = realpath(dirname(__FILE__) . '/custom_avatar');
 	}
 
 	if (file_exists(dirname(__FILE__) . '/Smileys'))
