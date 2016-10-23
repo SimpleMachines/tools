@@ -218,7 +218,7 @@ function execute()
 	if (empty($_POST['agree']) || empty($_POST['submit_ok']))
 		fatal_error('How did you get here?', false);
 
-	// how many actioins to do on each loop
+	// how many actions to do on each loop
 	$chunk = 5;
 
 	// Only do these steps if we have not already started our loop
