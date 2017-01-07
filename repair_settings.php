@@ -5,7 +5,7 @@
  *
  * @package SMF
  * @author Simple Machines
- * @copyright 2016 Simple Machines
+ * @copyright 2017 Simple Machines
  * @license http://www.simplemachines.org/about/smf/license.php BSD
  *
  * @version 2.1
