@@ -5,7 +5,7 @@
  *
  * @package SMF
  * @author Simple Machines
- * @copyright 2016 Simple Machines
+ * @copyright 2017 Simple Machines
  * @license http://www.simplemachines.org/about/smf/license.php BSD
  *
  * @version 2.1
@@ -111,16 +111,6 @@ $txt['theme_path_url_settings_info'] = 'These are the paths and URLs to your SMF
 // Fix Database title to use $db_type if available
 if (!empty($db_type) && isset($txt['db_' . $db_type]))
 	$txt['database_settings'] = $txt['db_' . $db_type] . ' ' . $txt['database_settings'];
-
-//Remove this file, maybe?
-if (isset($_POST['remove_file']))
-{
-	@unlink(__FILE__);
-
-	// Redirect to index.php.
-	header('Location: http://' . (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT']) . dirname($_SERVER['PHP_SELF']) . '/index.php');
-	exit;
-}
 
 if (isset($_POST['submit']))
 	set_settings();
@@ -291,13 +281,16 @@ function initialize_inputs()
 			$_POST[$k] = addcslashes($v, '\'\\');
 	}
 
+	// Https?
+	$context['schema'] = isset($_SERVER['HTTPS']) || (isset($_SERVER['REQUEST_SCHEME']) && strtolower($_SERVER['REQUEST_SCHEME']) == 'https') ? 'https' : 'http';
+
 	// This is really quite simple; if ?delete is on the URL, delete the installer...
-	if (isset($_GET['delete']))
+	if (isset($_GET['delete']) || isset($_POST['remove_file']))
 	{
 		@unlink(__FILE__);
 
 		// Now just redirect to a blank.gif...
-		header('Location: http://' . (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT']) . dirname($_SERVER['PHP_SELF']) . '/Themes/default/images/blank.gif');
+		header('Location: ' . $context['schema'] . '://' . (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT']) . dirname($_SERVER['PHP_SELF']) . '/index.php');
 		exit;
 	}
 
@@ -518,8 +511,8 @@ function show_settings()
 	// Let's assume we don't want to change the current theme
 	$settings['theme_default'] = 0;
 
-	$host = empty($_SERVER['HTTP_HOST']) ? $_SERVER['SERVER_NAME'] . (empty($_SERVER['SERVER_PORT']) || $_SERVER['SERVER_PORT'] == '80' ? '' : ':' . $_SERVER['SERVER_PORT']) : $_SERVER['HTTP_HOST'];
-	$url = 'http://' . $host . substr($_SERVER['PHP_SELF'], 0, strrpos($_SERVER['PHP_SELF'], '/'));
+	$host = empty($_SERVER['HTTP_HOST']) ? $_SERVER['SERVER_NAME'] . (empty($_SERVER['SERVER_PORT']) || $_SERVER['SERVER_PORT'] == '80' || ($_SERVER['SERVER_PORT'] == '443' && $context['schema'] == 'https') ? '' : ':' . $_SERVER['SERVER_PORT']) : $_SERVER['HTTP_HOST'];
+	$url = $context['schema'] . '://' . $host . substr($_SERVER['PHP_SELF'], 0, strrpos($_SERVER['PHP_SELF'], '/'));
 	$known_settings['path_url_settings']['boardurl'][2] = $url;
 	$known_settings['path_url_settings']['boarddir'][2] = dirname(__FILE__);
 
