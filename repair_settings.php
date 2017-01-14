@@ -347,39 +347,10 @@ function initialize_inputs()
 			$context['is_legacy'] = false;
 			$context['smfVersion'] = '2.0';
 
-			// See if we have PostgreSQL files, we should.
-			if (file_exists($sourcedir . '/Subs-Db-postgresql.php'))
-			{
-				$db_type_options['options']['postgresql'] = 'PostgreSQL';
-
-				// If we are currently postgresql, it should be the default.
-				if ($db_type == 'postgresql')
-					$db_type_options['default'] = $db_type;
-			}
 
 			// Try to see if this is 2.1.  Maybe include more checks.
 			if (file_exists($sourcedir . '/Class-TOTP.php'))
-			{
 				$context['smfVersion'] = '2.1';
-
-				// 2.1 Beta 1 and 2 supported mysqli, this was removed and merged into mysql in Beta 3.
-				if (file_exists($sourcedir . '/Subs-Db-mysqli.php'))
-				{
-					$db_type_options['options']['mysqli'] = 'MySQLi';
-
-					// Suggest that we move back to mysql.
-					if ($db_type == 'mysqli')
-						$db_type_options['default'] = 'mysql';
-				}
-			}
-			// 2.0 supports sqlite.
-			elseif (file_exists($sourcedir . '/Subs-Db-sqlite.php'))
-			{
-				$db_type_options['options']['sqlite'] = 'SQLite';			
-
-				if ($db_type == 'sqlite')
-					$db_type_options['default'] = $db_type;
-			}
 
 			// We should try to use the proper extension function if at all possible.
 			require_once($sourcedir . '/Subs-Db-' . $db_type . '.php');
@@ -405,6 +376,35 @@ function initialize_inputs()
 			}
 			else
 				$db_connection = null;
+		}
+
+		// See if we have PostgreSQL files, we should.
+		if (file_exists($sourcedir . '/Subs-Db-postgresql.php'))
+		{
+			$db_type_options['options']['postgresql'] = 'PostgreSQL';
+
+			// If we are currently postgresql, it should be the default.
+			if ($db_type == 'postgresql')
+				$db_type_options['default'] = $db_type;
+		}
+
+		// 2.1 Beta 1 and 2 supported mysqli, this was removed and merged into mysql in Beta 3.
+		if (file_exists($sourcedir . '/Subs-Db-mysqli.php'))
+		{
+			$db_type_options['options']['mysqli'] = 'MySQLi';
+
+			// Suggest that we move back to mysql.
+			if ($db_type == 'mysqli')
+				$db_type_options['default'] = 'mysql';
+		}
+
+		// 2.0 supports sqlite.
+		if (file_exists($sourcedir . '/Subs-Db-sqlite.php') && (empty($context['smfVersion']) || $context['smfVersion'] == '2.0'))
+		{
+			$db_type_options['options']['sqlite'] = 'SQLite';			
+
+			if ($db_type == 'sqlite')
+				$db_type_options['default'] = $db_type;
 		}
 	}
 }
