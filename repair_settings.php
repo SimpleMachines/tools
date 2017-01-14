@@ -9,6 +9,7 @@
  * @license http://www.simplemachines.org/about/smf/license.php BSD
  *
  * @version 2.1
+ * @updated 2017-01-14
  */
 
 // We need the Settings.php info for database stuff.
@@ -61,6 +62,7 @@ $txt['theme_default1'] = 'Yes (recommended if you have problems)';
 
 $txt['database_settings'] = 'Database Info';
 $txt['database_settings_info'] = 'This is the server, username, password, and database for your server.';
+$txt['db_type'] = 'Database Engine';
 $txt['db_server'] = 'Server';
 $txt['db_name'] = 'Database name';
 $txt['db_user'] = 'Username';
@@ -252,7 +254,7 @@ echo '
 
 function initialize_inputs()
 {
-	global $smcFunc, $db_connection, $sourcedir, $db_server, $db_name, $db_user, $db_passwd, $db_prefix, $db_type, $context, $sources_exist, $sources_found_path;
+	global $smcFunc, $db_connection, $sourcedir, $db_server, $db_name, $db_user, $db_passwd, $db_prefix, $db_type, $context, $sources_exist, $sources_found_path, $db_type_options;
 
 	// Turn off magic quotes runtime and enable error reporting.
 	if (function_exists('set_magic_quotes_runtime') && strnatcmp(phpversion(),'5.3.0') < 0)
@@ -316,7 +318,8 @@ function initialize_inputs()
 		if (empty($smcFunc))
 			$smcFunc = array();
 
-		// Default the database type to MySQL.
+		// Default the database type to MySQL. In 2.1 Beta 3, mysqli was removed, this will put it back to mysql.
+		$db_type_options = array('default' => 'mysql', 'options' => array('mysql' => 'MySQL'));
 		if (empty($db_type) || !file_exists($sourcedir . '/Subs-Db-' . $db_type . '.php'))
 			$db_type = 'mysql';
 
@@ -328,11 +331,12 @@ function initialize_inputs()
 
 		// Try to detect if we even have the database functions..
 		if (
-			($db_type == 'mysql' && !function_exists('mysql_connect')) ||
-			($db_type == 'myqli' && !function_exists('mysqli_connect')) ||
+			($db_type == 'mysql' && !function_exists('mysql_connect') && !function_exists('mysqli_connect')) ||
+			($db_type == 'mysqli' && !function_exists('mysqli_connect')) ||
 			($db_type == 'postgresql' && !function_exists('pg_pconnect'))
 		)
 			$db_connection = null;
+		// This is SMF 1.x as far as we can tell, as we don't know/have any database files.
 		elseif (!file_exists($sourcedir . '/Subs-Db-' . $db_type . '.php') && $db_type == 'mysql')
 		{
 			$db_connection = smc_compat_initiate($db_server, $db_name, $db_user, $db_passwd, $db_prefix, array('non_fatal' => true));
@@ -343,9 +347,39 @@ function initialize_inputs()
 			$context['is_legacy'] = false;
 			$context['smfVersion'] = '2.0';
 
+			// See if we have PostgreSQL files, we should.
+			if (file_exists($sourcedir . '/Subs-Db-postgresql.php'))
+			{
+				$db_type_options['options']['postgresql'] = 'PostgreSQL';
+
+				// If we are currently postgresql, it should be the default.
+				if ($db_type == 'postgresql')
+					$db_type_options['default'] = $db_type;
+			}
+
 			// Try to see if this is 2.1.  Maybe include more checks.
 			if (file_exists($sourcedir . '/Class-TOTP.php'))
+			{
 				$context['smfVersion'] = '2.1';
+
+				// 2.1 Beta 1 and 2 supported mysqli, this was removed and merged into mysql in Beta 3.
+				if (file_exists($sourcedir . '/Subs-Db-mysqli.php'))
+				{
+					$db_type_options['options']['mysqli'] = 'MySQLi';
+
+					// Suggest that we move back to mysql.
+					if ($db_type == 'mysqli')
+						$db_type_options['default'] = 'mysql';
+				}
+			}
+			// 2.0 supports sqlite.
+			elseif (file_exists($sourcedir . '/Subs-Db-sqlite.php'))
+			{
+				$db_type_options['options']['sqlite'] = 'SQLite';			
+
+				if ($db_type == 'sqlite')
+					$db_type_options['default'] = $db_type;
+			}
 
 			// We should try to use the proper extension function if at all possible.
 			require_once($sourcedir . '/Subs-Db-' . $db_type . '.php');
@@ -377,7 +411,7 @@ function initialize_inputs()
 
 function show_settings()
 {
-	global $txt, $smcFunc, $db_connection, $db_type, $db_name, $db_prefix, $context, $sources_exist, $sources_found_path;
+	global $txt, $smcFunc, $db_connection, $db_type, $db_name, $db_prefix, $context, $sources_exist, $sources_found_path, $db_type_options;
 
 	// Check to make sure Settings.php exists!
 	if (file_exists(dirname(__FILE__) . '/Settings.php'))
@@ -468,6 +502,7 @@ function show_settings()
 			'theme_default' => array('db', 'int', 1),
 		),
 		'database_settings' => array(
+			'db_type' => array('flat', 'select', $db_type_options['default'], $db_type_options['options']),
 			'db_server' => array('flat', 'string', 'localhost'),
 			'db_name' => array('flat', 'string'),
 			'db_user' => array($db_type == 'sqlite' ? 'hidden' : 'flat', 'string'),
@@ -648,9 +683,17 @@ function show_settings()
 					{
 						var elem = document.getElementById(resetSettings[i]);
 						var val = elem.value;
-						elem.value = getInnerHTML(document.getElementById(resetSettings[i] + \'_default\'));
-						if (val != elem.value)
-						elem.parentNode.parentNode.className += " changed";
+
+						if ($(elem).attr("class") == "input_select")
+						{
+							$("#" + resetSettings[i] + "_default").trigger("click");
+						}
+						else
+						{
+							elem.value = getInnerHTML(document.getElementById(resetSettings[i] + \'_default\'));
+							if (val != elem.value)
+								elem.parentNode.parentNode.className += " changed";
+						}
 					}
 				}
 			// ]]></script>
@@ -741,6 +784,28 @@ function show_settings()
 
 					$item++;
 				}
+			}
+			elseif ($info[1] == 'select' && !empty($info[3]))
+			{
+				echo '
+								<select name="', $info[0], 'settings[', $setting, ']" id="', $setting, '" class="input_select">';
+
+				foreach ($info[3] as $infoId => $infoTitle)
+					echo '
+									<option value="', $infoId, '"', isset($settings[$setting]) && $settings[$setting] == $infoId ? ' selected="selected"' : '', '>', $infoTitle, '</option>';
+								
+				echo '
+								</select>';
+
+				if (isset($txt[$setting . '_help']))
+					echo '<div style="font-size: smaller;">', $txt[$setting . '_help'], '</div>';
+
+				if (!is_null($info[2]))
+					echo '
+								<div style="font-size: smaller;">', $txt['default_value'], ': &quot;<strong><a href="javascript:void(0);" id="', $setting, '_default" onclick="$(\'#', $setting, '\').val(\'', $info[2], '\').change();">' . $info[3][$info[2]], '</a></strong>&quot;.</div>',
+								$info[2] == '' ? '' : ($setting != 'language' && $setting != 'cookiename' ? '
+								<script type="text/javascript"><!-- // --><![CDATA[
+									resetSettings[settingsCounter++] = "' . $setting . '"; // ]]></script>' : '');
 			}
 
 			echo '
