@@ -298,7 +298,7 @@ function initialize_inputs()
 
 	$db_connection = false;
 	$sources_exist = false;
-	$context['smfVersion'] = '1.1';
+	$context['smfVersion'] = 'N/A';
 	$sources_found_path = '';
 	if (isset($sourcedir) && (file_exists(dirname(__FILE__) . '/Sources/Load.php')))
 		$sources_exist = true;
@@ -339,6 +339,7 @@ function initialize_inputs()
 		// This is SMF 1.x as far as we can tell, as we don't know/have any database files.
 		elseif (!file_exists($sourcedir . '/Subs-Db-' . $db_type . '.php') && $db_type == 'mysql')
 		{
+			$context['smfVersion'] = '1.1';
 			$db_connection = smc_compat_initiate($db_server, $db_name, $db_user, $db_passwd, $db_prefix, array('non_fatal' => true));
 		}
 		else
@@ -346,7 +347,6 @@ function initialize_inputs()
 			// Far as I know, this is 2.0.
 			$context['is_legacy'] = false;
 			$context['smfVersion'] = '2.0';
-
 
 			// Try to see if this is 2.1.  Maybe include more checks.
 			if (file_exists($sourcedir . '/Class-TOTP.php'))
@@ -540,8 +540,8 @@ function show_settings()
 		unset($known_settings['database_settings']['ssi_db_user'], $known_settings['database_settings']['ssi_db_passwd'], $known_settings['cache_settings']['cachedir'], $known_settings['path_url_settings']['custom_avatar_url'], $known_settings['path_url_settings']['custom_avatar_dir']);
 
 	// These settings didn't exist in 2.0 or 1.1
-	if ($context['smfVersion'] != '2.1')
-		unset($known_settings['cache_settings']['cache_accelerator'], $known_settings['cache_settings']['cache_enable'], $known_settings['cache_settings']['cache_memcached']);
+	if ($context['smfVersion'] == '2.0' || $context['smfVersion'] == '1.1')
+		unset($known_settings['cache_settings']['cache_accelerator'], $known_settings['cache_settings']['cache_enable'], $known_settings['cache_settings']['cache_memcached'], $known_settings['path_url_settings']['tasksdir'], $known_settings['path_url_settings']['packagesdir']);
 
 	// Let's assume we don't want to change the current theme
 	$settings['theme_default'] = 0;
@@ -752,9 +752,10 @@ function show_settings()
 			{
 				if (!is_array($settings[$setting]) && $context['smfVersion'] == '2.1')
 					$array_settings = json_decode($settings[$setting], true);
-				if (!is_array($array_settings) && !is_array($settings[$setting]))
+				// Maybe its a seraialized array, we only support those, so test for it in a simple way.
+				if (!(isset($array_settings) && is_array($array_settings)) && !is_array($settings[$setting]))
 					$array_settings = @unserialize($settings[$setting]);
-				if (!is_array($array_settings))
+				if (!isset($array_settings) || !is_array($array_settings))
 					$array_settings = array($settings[$setting]);
 
 				$item = 1;
