@@ -318,7 +318,7 @@ function initialize_inputs()
 		if (empty($smcFunc))
 			$smcFunc = array();
 
-		// Default the database type to MySQL. In 2.1 Beta 3, mysqli was removed, this will put it back to mysql.
+		// Default the database type to MySQLi. In 2.1 Beta 3, mysql was removed, this will put it back to mysqli.
 		$db_type_options = array('default' => 'mysql', 'options' => array('mysql' => 'MySQL'));
 		if (empty($db_type) || !file_exists($sourcedir . '/Subs-Db-' . $db_type . '.php'))
 			$db_type = 'mysql';
