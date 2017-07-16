@@ -35,7 +35,7 @@ $populate = new Populate();
  */
 class Populate
 {
-	private $blockSize = 150;
+	private $blockSize = 500;
 	private $refreshRate = 0;
 	private $loremIpsum = null;
 	private $ounters = array();
@@ -50,6 +50,8 @@ class Populate
 		$this->counters['categories']['current'] = 0;
 		$this->counters['boards']['max'] = 100;
 		$this->counters['boards']['current'] = 0;
+		$this->counters['membergroups']['max'] = 200;
+		$this->counters['membergroups']['current'] = 0;
 		$this->counters['members']['max'] = 270000;
 		$this->counters['members']['current'] = 0;
 		$this->counters['topics']['max'] = 370000;
@@ -130,10 +132,40 @@ class Populate
 		$this->pause();
 	}
 
+	private function makeMembergroups ()
+	{
+		global $smcFunc;
+
+		while ($this->counters['membergroups']['current'] < $this->counters['membergroups']['max'] && $this->blockSize--)
+		{
+			$smcFunc['db_insert']('',
+				'{db_prefix}membergroups',
+				array(
+					'description' => 'string', 'group_name' => 'string-80', 'min_posts' => 'int',
+					'icons' => 'string', 'online_color' => 'string', 'group_type' => 'int',
+				),
+				array(
+					'',
+					'Membergroup ' . ++$this->counters['membergroups']['current'],
+					'-1',
+					'1#icon.png',
+					'',
+					0,
+				),
+				array('id_group')
+			);
+		}
+
+		$this->pause();
+	}
+
 	private function makeMembers ()
 	{
-		global $sourcedir;
+		global $sourcedir, $modSettings;
 		require_once($sourcedir . '/Subs-Members.php');
+
+		// Hash password is slow with the default 10 on the hash cost, reducing this helps.
+		$modSettings['bcrypt_hash_cost'] = 4;
 
 		while ($this->counters['members']['current'] < $this->counters['members']['max'] && $this->blockSize--)
 		{
@@ -142,7 +174,11 @@ class Populate
 				'username' => 'Member ' . ++$this->counters['members']['current'],
 				'email' => 'member_' . $this->counters['members']['current'] . '@' . $_SERVER['SERVER_NAME'] . (strpos($_SERVER['SERVER_NAME'], '.') === FALSE ? '.com' : ''),
 				'password' => '',
-				'require' => 'nothing'
+				'require' => 'nothing',
+				'send_welcome_email' => false,
+				'check_password_strength' => false,
+				'check_email_ban' => false,
+				'memberGroup' => rand(8, $this->counters['membergroups']['max']),
 			);
 
 			registerMember($regOptions);
