@@ -8,7 +8,7 @@
  * @copyright 2011 Simple Machines
  * @license http://www.simplemachines.org/about/smf/license.php BSD
  *
- * @version 2.0
+ * @version 2.0.16
  */
 
 // If SSI.php is in the same place as this file, and SMF isn't defined, this is being run standalone.
@@ -19,7 +19,7 @@ if (file_exists(dirname(__FILE__) . '/SSI.php') && !defined('SMF'))
 elseif(!defined('SMF'))
 	die('<b>Error:</b> Cannot start - please verify you put this in the same place as SMF\'s SSI.php.');
 
-$smfinfo_version = '1.0';
+$smfinfo_version = '1.1';
 
 initialize();
 
@@ -400,8 +400,6 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 			var titles = new Array();
 			function addSection(name, title)
 			{
-
-
 				var drop = document.getElementById("menuDropdown");
 				var option = document.createElement("option");
 				sections.push(name);
@@ -413,9 +411,6 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 
 			function swapSection(id)
 			{
-
-
-
 				for (var i = 0; i < sections.length; i++)
 				{
 					if (i == id)
@@ -428,9 +423,6 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 			var onload_events = new Array();
 			function addLoadEvent(func)
 			{
-
-
-
 				// Get the old event if there is one.
 				var oldOnload = window.onload;
 
@@ -440,8 +432,6 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 					// Since we don\'t have anything at this point just add it stright in.
 					window.onload = func;
 				}
-
-
 
 				// So it is a function but is it our special function?
 				else if(onload_events.length == 0)
@@ -1471,13 +1461,10 @@ function initialize()
 	// Set this to true so we get the correct forum value
 	$ssi_gzip = true;
 
-
-
-
-
-
-
 	$forum_version = get_file_versions(true);
+	header('X-Frame-Options: SAMEORIGIN');
+	header('X-XSS-Protection: 1');
+	header('X-Content-Type-Options: nosniff');
 
 	$smfInfo = !empty($modSettings['smfInfo']) ? $modSettings['smfInfo'] : '';
 
@@ -1486,9 +1473,6 @@ function initialize()
 
 	// If the user isn't an admin or they don't have a password in the URL, or its incorrect, kick 'em out
 	if (!allowedTo('admin_forum') && (!isset($_POST['pass']) || strcmp($_POST['pass'], $smfInfo) != 0))
-
-
-
 		show_password_form();
 
 	// Either their an admin or have the right password
@@ -1515,22 +1499,12 @@ function get_database_version()
 
 	if (empty($db_type) || (!empty($db_type) && $db_type == 'mysql'))
 	{
-
-
-
 		$temp_prefix = (strpos($db_prefix, $db_name) === false ? '`' . $db_name . '`.' : '') . $db_prefix;
-
-
-
-
-
-
 
 		// Get the collation of the 'body' field of the messages table
 		$query = ' SHOW FULL COLUMNS FROM ' . $temp_prefix . 'messages WHERE Field = \'body\'';
-		$request = mysql_query($query);
-		$row = @mysql_fetch_assoc($request);
-
+		$request = $smcFunc['db_query']('', $query);
+		$row = @$smcFunc['db_fetch_assoc']($request);
 
 		if (!empty($row))
 			$collation = $row['Collation'];
@@ -1541,14 +1515,8 @@ function get_database_version()
 	else
 		$context['character_set'] = $txt['unknown_db_version'];
 
-	if (empty($smcFunc))
-		$context['database_version'] = 'MySQL ' . mysql_get_server_info();
-
-	else
-	{
-		db_extend();
-		$context['database_version'] = $smcFunc['db_title'] . ' ' . $smcFunc['db_get_version']();
-	}
+	db_extend();
+	$context['database_version'] = $smcFunc['db_title'] . ' ' . $smcFunc['db_get_version']();
 }
 
 function get_file_versions($core = false)
@@ -1595,7 +1563,7 @@ function get_file_versions($core = false)
 		fclose($fp);
 
 		// The comment looks rougly like... that.
-		if (preg_match('~\*\s*Software\s+Version:\s+SMF\s+(.+?)[\s]{2}~i', $header, $match) == 1)
+		if (preg_match('~\*\s*@version\s+(.+?)[\s]{2}~i', $header, $match) == 1)
 			$version_info['file_versions']['SSI.php'] = $match[1];
 
 		// Not found!  This is bad.
@@ -1611,7 +1579,7 @@ function get_file_versions($core = false)
 		fclose($fp);
 
 		// Found it?
-		if (preg_match('~\*\s*Software\s+Version:\s+SMF\s+(.+?)[\s]{2}~i', $header, $match) == 1)
+		if (preg_match('~\*\s*@version\s+(.+?)[\s]{2}~i', $header, $match) == 1)
 			$version_info['file_versions']['subscriptions.php'] = $match[1];
 
 		// If we haven't how do we all get paid?
@@ -1631,7 +1599,7 @@ function get_file_versions($core = false)
 			fclose($fp);
 
 			// Look for the version comment in the file header.
-			if (preg_match('~\*\s*Software\s+Version:\s+SMF\s+(.+?)[\s]{2}~i', $header, $match) == 1)
+			if (preg_match('~\*\s*@version\s+(.+?)[\s]{2}~i', $header, $match) == 1)
 				$version_info['file_versions'][$entry] = $match[1];
 
 			// It wasn't found, but the file was... show a '??'.
@@ -1659,7 +1627,7 @@ function get_file_versions($core = false)
 				fclose($fp);
 
 				// Look for the version comment in the file header.
-				if (preg_match('~(?://|/\*)\s*Version:\s+(.+?);\s*' . preg_quote(basename($entry, '.template.php'), '~') . '(?:[\s]{2}|\*/)~i', $header, $match) == 1)
+				if (preg_match('~\*\s*@version\s+(.+?)[\s]{2}~i', $header, $match) == 1)
 					$version_info[$type][$entry] = $match[1];
 
 				// It wasn't found, but the file was... show a '??'.
@@ -1751,10 +1719,7 @@ function generate_password()
 {
 	global $sourcedir, $smfInfo, $forum_version, $boardurl;
 
-	if (strpos($forum_version, '1.') === 0)
-		require_once($sourcedir . '/Admin.php');
-	else
-		require_once($sourcedir . '/Subs-Admin.php');
+	require_once($sourcedir . '/Subs-Admin.php');
 
 	$password = '';
 	$possible = 'abcdfghjkmnpqrstvwxyz0123456789ABCDEFGHJKLMNOPQRSTUVXYZ';
@@ -2240,44 +2205,41 @@ function get_windows_data()
 
 function get_mysql_data()
 {
-	global $context, $db_prefix;
+	global $context, $smcFunc;
 
-	if (!isset($db_prefix) || $db_prefix === false)
-		return;
+	$request = $smcFunc['db_query']('', '
+		SELECT CONCAT(SUBSTRING(VERSION(), 1, LOCATE(\'.\', VERSION(), 3)), \'x\')');
+	list ($context['mysql_version']) = $smcFunc['db_fetch_row']($request);
+	$smcFunc['db_free_result']($request);
 
-	$request = mysql_query("
-		SELECT CONCAT(SUBSTRING(VERSION(), 1, LOCATE('.', VERSION(), 3)), 'x')");
-	list ($context['mysql_version']) = mysql_fetch_row($request);
-	mysql_free_result($request);
-
-	$request = mysql_query("
-		SHOW VARIABLES");
+	$request = $smcFunc['db_query']('', '
+		SHOW VARIABLES');
 	$context['mysql_variables'] = array();
-	while ($row = @mysql_fetch_row($request))
+	while ($row = @$smcFunc['db_fetch_row']($request))
 		$context['mysql_variables'][$row[0]] = array(
 			'name' => $row[0],
-			'value' => htmlspecialchars($row[1]),
+			'value' => $row[1],
 		);
-	@mysql_free_result($request);
+	@$smcFunc['db_free_result']($request);
 
-	$request = mysql_query("
-		SHOW /*!50000 GLOBAL */ STATUS");
+	$request = $smcFunc['db_query']('', '
+		SHOW GLOBAL STATUS');
 	$context['mysql_status'] = array();
-	while ($row = @mysql_fetch_row($request))
+	while ($row = @$smcFunc['db_fetch_row']($request))
 		$context['mysql_status'][$row[0]] = array(
 			'name' => $row[0],
 			'value' => $row[1],
 		);
-	@mysql_free_result($request);
+	@$smcFunc['db_free_result']($request);
 
 	$context['mysql_num_sleeping_processes'] = 0;
 	$context['mysql_num_locked_processes'] = 0;
 	$context['mysql_num_running_processes'] = 0;
 
-	$request = mysql_query("
-		SHOW FULL PROCESSLIST");
+	$request = $smcFunc['db_query']('', '
+		SHOW FULL PROCESSLIST');
 	$context['mysql_processes'] = array();
-	while ($row = @mysql_fetch_assoc($request))
+	while ($row = @$smcFunc['db_fetch_assoc']($request))
 	{
 		if ($row['State'] == 'Locked' || $row['State'] == 'Waiting for tables')
 			$context['mysql_num_locked_processes']++;
@@ -2298,7 +2260,7 @@ function get_mysql_data()
 			);
 		}
 	}
-	@mysql_free_result($request);
+	@$smcFunc['db_free_result']($request);
 
 	$context['mysql_statistics'] = array();
 
@@ -2480,18 +2442,16 @@ function get_server_versions($checkFor)
 function get_database_info()
 {
 	// This is sloooowwwwwwwww
-	global $context, $db_name, $db_prefix;
+	global $context, $db_name, $db_prefix, $smcFunc;
 
 	$match = array();
 	$temp_prefix = preg_match('~(?:.*\.)?([^.]*)~', $db_prefix, $match) === 1 ? $match[1] : $db_prefix;
 
-
-
-	$result = mysql_query('SHOW TABLE STATUS FROM `' . $db_name . '` LIKE \'' . $temp_prefix . '%\'');
+	$result = $smcFunc['db_query']('', 'SHOW TABLE STATUS FROM `' . $db_name . '` LIKE \'' . $temp_prefix . '%\'');
 
 	$context['database_tables'] = array();
 	$context['database_size'] = 0;
-	while ($row = mysql_fetch_assoc($result))
+	while ($row = $smcFunc['db_fetch_assoc']($result))
 	{
 		$context['database_tables'][$row['Name']] = array(
 			'name' => str_replace($db_prefix, '', '`' . $db_name . '`.' . $row['Name']),
@@ -2506,16 +2466,15 @@ function get_database_info()
 		);
 		$context['database_size'] += $row['Data_length'];
 	}
-	@mysql_free_result($result);
+	@$smcFunc['db_free_result']($result);
 
 	$context['database_size'] = convert_memory($context['database_size']);
 
-	foreach($context['database_tables'] as $table => $info)
+	foreach ($context['database_tables'] as $table => $info)
 	{
 		// Get the columns of the table, and thier stuff...
-		$result = mysql_query('SHOW FULL COLUMNS FROM ' . $table . ' FROM `' . $db_name . '`');
-		echo mysql_error();
-		while ($column = mysql_fetch_assoc($result))
+		$result = $smcFunc['db_query']('', 'SHOW FULL COLUMNS FROM ' . $table . ' FROM `' . $db_name . '`');
+		while ($column = $smcFunc['db_fetch_assoc']($result))
 			$context['database_tables'][$table]['columns'][$column['Field']] = array(
 				'name' => $column['Field'],
 				'type' => $column['Type'],
@@ -2524,92 +2483,55 @@ function get_database_info()
 				'default' => $column['Default'],
 				'extra' => $column['Extra'],
 			);
-		@mysql_free_result($result);
+		@$smcFunc['db_free_result']($result);
 	}
 }
 
 function get_error_log()
 {
-	global $context, $db_prefix, $smcFunc, $scripturl, $txt;
+	global $context, $smcFunc, $scripturl, $txt;
 
 	$context['errors'] = array();
 
-	// 1.0 queries first... (regular ol' mysql calls)
-	if(empty($smcFunc))
+	// Just how many errors are there?
+	$result = $smcFunc['db_query']('', '
+		SELECT COUNT(*)
+		FROM {db_prefix}log_errors',
+		array()
+	);
+	list ($context['num_errors']) = $smcFunc['db_fetch_row']($result);
+	$smcFunc['db_free_result']($result);
+
+	if ($context['num_errors'] == 0)
+		return;
+
+	// Find and sort out the errors.
+	$request = $smcFunc['db_query']('', '
+		SELECT id_error, id_member, url, log_time, message, error_type, file, line
+		FROM {db_prefix}log_errors
+		ORDER BY id_error DESC
+		LIMIT 100',
+		array()
+	);
+
+	while ($row = $smcFunc['db_fetch_assoc']($request))
 	{
-		// Just how many errors are there?
-		$result = mysql_query("
-			SELECT COUNT(*)
-			FROM {$db_prefix}log_errors");
-		list ($context['num_errors']) = mysql_fetch_row($result);
-		mysql_free_result($result);
+		$show_message = strtr(strtr(preg_replace('~&lt;span class=&quot;remove&quot;&gt;(.+?)&lt;/span&gt;~', '$1', $row['message']), array("\r" => '', '<br />' => "\n", '<' => '&lt;', '>' => '&gt;', '"' => '&quot;')), array("\n" => '<br />'));
+		if (!empty($row['file']) && !empty($row['line']))
+			$show_message .= '<br />' . $txt['error_file'] . ': ' . $row['file'] . '<br />' . $txt['error_line'] . ': ' . $row['line'];
 
-		if ($context['num_errors'] == 0)
-			return;
-
-		// Find and sort out the errors.
-		$request = mysql_query("
-			SELECT ID_ERROR, ID_MEMBER, url, logTime, message
-			FROM {$db_prefix}log_errors
-			ORDER BY ID_ERROR DESC
-			LIMIT 100");
-
-		while ($row = mysql_fetch_assoc($request))
-		{
-			$show_message = strtr(strtr(preg_replace('~&lt;span class=&quot;remove&quot;&gt;(.+?)&lt;/span&gt;~', '$1', $row['message']), array("\r" => '', '<br />' => "\n", '<' => '&lt;', '>' => '&gt;', '"' => '&quot;')), array("\n" => '<br />'));
-
-			$context['errors'][] = array(
-				'error_id' => $row['ID_ERROR'],
-				'member_id' => $row['ID_MEMBER'],
-				'time' => timeformat($row['logTime']),
-				'url_html' => htmlspecialchars($scripturl . $row['url']),
-				'message_html' => $show_message,
-			);
-		}
-		mysql_free_result($request);
-	}
-	else
-	{
-		// Just how many errors are there?
-		$result = $smcFunc['db_query']('', '
-			SELECT COUNT(*)
-			FROM {db_prefix}log_errors',
-			array()
+		$context['errors'][] = array(
+			'error_id' => $row['id_error'],
+			'member_id' => $row['id_member'],
+			'time' => timeformat($row['log_time']),
+			'url_html' => htmlspecialchars($scripturl . $row['url']),
+			'message_html' => $show_message,
+			'type' => $row['error_type'],
+			'file' => $row['file'],
+			'line' => $row['line'],
 		);
-		list ($context['num_errors']) = $smcFunc['db_fetch_row']($result);
-		$smcFunc['db_free_result']($result);
-
-		if ($context['num_errors'] == 0)
-			return;
-
-		// Find and sort out the errors.
-		$request = $smcFunc['db_query']('', '
-			SELECT id_error, id_member, url, log_time, message, error_type, file, line
-			FROM {db_prefix}log_errors
-			ORDER BY id_error DESC
-			LIMIT 100',
-			array()
-		);
-
-		while ($row = $smcFunc['db_fetch_assoc']($request))
-		{
-			$show_message = strtr(strtr(preg_replace('~&lt;span class=&quot;remove&quot;&gt;(.+?)&lt;/span&gt;~', '$1', $row['message']), array("\r" => '', '<br />' => "\n", '<' => '&lt;', '>' => '&gt;', '"' => '&quot;')), array("\n" => '<br />'));
-			if (!empty($row['file']) && !empty($row['line']))
-				$show_message .= '<br />' . $txt['error_file'] . ': ' . $row['file'] . '<br />' . $txt['error_line'] . ': ' . $row['line'];
-
-			$context['errors'][] = array(
-				'error_id' => $row['id_error'],
-				'member_id' => $row['id_member'],
-				'time' => timeformat($row['log_time']),
-				'url_html' => htmlspecialchars($scripturl . $row['url']),
-				'message_html' => $show_message,
-				'type' => $row['error_type'],
-				'file' => $row['file'],
-				'line' => $row['line'],
-			);
-		}
-		$smcFunc['db_free_result']($request);
 	}
+	$smcFunc['db_free_result']($request);
 }
 
 function convert_memory($number, $bytes=true)
@@ -2629,3 +2551,5 @@ function convert_memory($number, $bytes=true)
 
   return number_format($number,2) . ' ' . $thousandArray[$i] . $bitsOrBytes;
 }
+
+?>

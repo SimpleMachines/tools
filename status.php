@@ -8,12 +8,10 @@
  * @copyright 2011 Simple Machines
  * @license http://www.simplemachines.org/about/smf/license.php BSD
  *
- * @version 2.0
+ * @version 2.0.16
  */
 
-// Forum slow? Having  performance problems?  This little blue pill will assist in finding the problem!
-
-// !!! eAccelerator, etc.?
+// Forum slow? Having performance problems?  This little blue pill will assist in finding the problem!
 
 initialize_inputs();
 
@@ -23,12 +21,9 @@ generate_status();
 
 function initialize_inputs()
 {
-	global $db_prefix, $context, $db_show_debug;
-
-	// Turn off magic quotes runtime and enable error reporting.
-	@set_magic_quotes_runtime(0);
-	error_reporting(E_ALL);
-	$db_show_debug = false;
+	header('X-Frame-Options: SAMEORIGIN');
+	header('X-XSS-Protection: 1');
+	header('X-Content-Type-Options: nosniff');
 
 	$possible = array(
 		dirname(__FILE__),
@@ -48,7 +43,7 @@ function initialize_inputs()
 			break;
 	}
 
-	if (!@file_exists($dir . '/Settings.php'))
+	if (!@file_exists($dir . '/SSI.php'))
 	{
 		// It's search time!  This could take a while!
 		$possible = array(dirname(__FILE__));
@@ -56,7 +51,7 @@ function initialize_inputs()
 		while (!empty($possible))
 		{
 			$dir = array_pop($possible);
-			if (@file_exists($dir . '/SSI.php') && @file_exists($dir . '/Settings.php'))
+			if (@file_exists($dir . '/SSI.php'))
 				break;
 			$checked[] = $dir;
 
@@ -71,19 +66,11 @@ function initialize_inputs()
 			}
 			$dp->close();
 		}
-		if (!@file_exists($dir . '/Settings.php'))
+		if (!@file_exists($dir . '/SSI.php'))
 			return;
 	}
 
-	require_once($dir . '/Settings.php');
-
-	if (empty($db_persist))
-		$db_connection = @mysql_connect($db_server, $db_user, $db_passwd);
-	else
-		$db_connection = @mysql_pconnect($db_server, $db_user, $db_passwd);
-	if ($db_connection === false)
-		$db_prefix = false;
-	@mysql_select_db($db_name, $db_connection);
+	require_once($dir . '/SSI.php');
 }
 
 function get_linux_data()
@@ -584,44 +571,41 @@ function get_windows_data()
 
 function get_mysql_data()
 {
-	global $context, $db_prefix;
+	global $context, $smcFunc;
 
-	if (!isset($db_prefix) || $db_prefix === false)
-		return;
+	$request = $smcFunc['db_query']('', '
+		SELECT CONCAT(SUBSTRING(VERSION(), 1, LOCATE(\'.\', VERSION(), 3)), \'x\')');
+	list ($context['mysql_version']) = $smcFunc['db_fetch_row']($request);
+	$smcFunc['db_free_result']($request);
 
-	$request = mysql_query("
-		SELECT CONCAT(SUBSTRING(VERSION(), 1, LOCATE('.', VERSION(), 3)), 'x')");
-	list ($context['mysql_version']) = mysql_fetch_row($request);
-	mysql_free_result($request);
-
-	$request = mysql_query("
-		SHOW VARIABLES");
+	$request = $smcFunc['db_query']('', '
+		SHOW VARIABLES');
 	$context['mysql_variables'] = array();
-	while ($row = @mysql_fetch_row($request))
+	while ($row = @$smcFunc['db_fetch_row']($request))
 		$context['mysql_variables'][$row[0]] = array(
 			'name' => $row[0],
 			'value' => $row[1],
 		);
-	@mysql_free_result($request);
+	@$smcFunc['db_free_result']($request);
 
-	$request = mysql_query("
-		SHOW /*!50000 GLOBAL */ STATUS");
+	$request = $smcFunc['db_query']('', '
+		SHOW GLOBAL STATUS');
 	$context['mysql_status'] = array();
-	while ($row = @mysql_fetch_row($request))
+	while ($row = @$smcFunc['db_fetch_row']($request))
 		$context['mysql_status'][$row[0]] = array(
 			'name' => $row[0],
 			'value' => $row[1],
 		);
-	@mysql_free_result($request);
+	@$smcFunc['db_free_result']($request);
 
 	$context['mysql_num_sleeping_processes'] = 0;
 	$context['mysql_num_locked_processes'] = 0;
 	$context['mysql_num_running_processes'] = 0;
 
-	$request = mysql_query("
-		SHOW FULL PROCESSLIST");
+	$request = $smcFunc['db_query']('', '
+		SHOW FULL PROCESSLIST');
 	$context['mysql_processes'] = array();
-	while ($row = @mysql_fetch_assoc($request))
+	while ($row = @$smcFunc['db_fetch_assoc']($request))
 	{
 		if ($row['State'] == 'Locked' || $row['State'] == 'Waiting for tables')
 			$context['mysql_num_locked_processes']++;
@@ -642,7 +626,7 @@ function get_mysql_data()
 			);
 		}
 	}
-	@mysql_free_result($request);
+	@$smcFunc['db_free_result']($request);
 
 	$context['mysql_statistics'] = array();
 
@@ -1237,3 +1221,5 @@ function get_file_data($filename)
 
 	return $data;
 }
+
+?>
