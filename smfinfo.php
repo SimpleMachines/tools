@@ -53,7 +53,6 @@ function load_txt_strings()
 	$txt['db_char_set'] = 'Database Character Set';
 	$txt['db_table_info'] = 'Detailed Table Information';
 
-
 	// SMF Specific Info
 	$txt['smf_relevant'] = 'Relevant SMF Settings';
 	$txt['sef_urls'] = 'SEF URLs';
@@ -80,7 +79,6 @@ function load_txt_strings()
 	$txt['support_versions_current'] = 'Current SMF Info version';
 	$txt['support_versions_forum'] = 'Your SMF Info version';
 	$txt['previousCharacterSet'] = 'Previous character set';
-
 
 	// PHP Specific Info
 	$txt['relevant_info'] = 'Relevant PHP Settings';
@@ -215,6 +213,14 @@ function show_header()
 {
 	global $txt, $smfInfo, $context, $smfinfo_version;
 
+// Find logo image...
+if (file_exists('./Themes/default/images/smflogo.svg'))
+		$smflogo = './Themes/default/images/smflogo.svg';
+elseif (file_exists('./Themes/default/images/smflogo.png'))
+		$smflogo = './Themes/default/images/smflogo.png';
+else
+	$smflogo = './Themes/default/images/smflogo.gif';
+
 echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 	<head>
@@ -282,35 +288,6 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 				position:relative;
 			}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 			.dynamic-tab-pane-control .tab-page{
 				border:1px solid #919b9c;
 				background:#f6f6f6;
@@ -323,11 +300,6 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 				width:97%;
 				float:left;
 			}
-
-
-
-
-
 
 			/* This is for phpinfo */
 			table.adminlist
@@ -458,11 +430,10 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 	</head>
 	<body>
 		<div id="header">
-			<a href="http://www.simplemachines.org/" target="_blank"><img src="./Themes/default/images/smflogo.gif" style="width: 258px; float: right;" alt="Simple Machines" border="0" /></a>
+			<a href="http://www.simplemachines.org/" target="_blank"><img src="' . $smflogo . '" style="width: 258px; float: right;" alt="Simple Machines" border="0" /></a>
 			<div>', $txt['title'], '</div>
 		</div>
 		<div id="content">';
-
 
 	if (allowedTo('admin_forum'))
 		echo '
@@ -560,10 +531,6 @@ function show_system_info()
 	get_database_version();
 
 	echo '
-
-
-
-
 			<div class="tab-page" id="main"><h2 class="tab">', $txt['maininfo'], '</h2>
 				<script type="text/javascript">addSection("main", "', $txt['maininfo'], '" );</script>
 				<table border="0" width="100%" cellpadding="2" cellspacing="2">
@@ -1329,7 +1296,6 @@ function show_footer()
 				if (document.getElementById("Templates"))
 					document.getElementById("Templates").style.display = "none";
 
-
 				if (typeof(window.smfVersions) == "undefined")
 					window.smfVersions = {};
 
@@ -1367,7 +1333,6 @@ function show_footer()
 					setInnerHTML(document.getElementById("current" + filename), smfVersions[filename]);
 					setInnerHTML(document.getElementById("your" + filename), yourVersion);
 				}
-
 
 				if (typeof(window.smfLanguageVersions) == "undefined")
 					window.smfLanguageVersions = {};
