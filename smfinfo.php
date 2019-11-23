@@ -53,7 +53,6 @@ function load_txt_strings()
 	$txt['db_char_set'] = 'Database Character Set';
 	$txt['db_table_info'] = 'Detailed Table Information';
 
-
 	// SMF Specific Info
 	$txt['smf_relevant'] = 'Relevant SMF Settings';
 	$txt['sef_urls'] = 'SEF URLs';
@@ -80,7 +79,6 @@ function load_txt_strings()
 	$txt['support_versions_current'] = 'Current SMF Info version';
 	$txt['support_versions_forum'] = 'Your SMF Info version';
 	$txt['previousCharacterSet'] = 'Previous character set';
-
 
 	// PHP Specific Info
 	$txt['relevant_info'] = 'Relevant PHP Settings';
@@ -282,35 +280,6 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 				position:relative;
 			}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 			.dynamic-tab-pane-control .tab-page{
 				border:1px solid #919b9c;
 				background:#f6f6f6;
@@ -323,11 +292,6 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 				width:97%;
 				float:left;
 			}
-
-
-
-
-
 
 			/* This is for phpinfo */
 			table.adminlist
@@ -463,7 +427,6 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 		</div>
 		<div id="content">';
 
-
 	if (allowedTo('admin_forum'))
 		echo '
 		<div class="windowbg" style="margin: 1ex; padding: 1ex 2ex; border: 1px dashed green; color: green;">
@@ -560,10 +523,6 @@ function show_system_info()
 	get_database_version();
 
 	echo '
-
-
-
-
 			<div class="tab-page" id="main"><h2 class="tab">', $txt['maininfo'], '</h2>
 				<script type="text/javascript">addSection("main", "', $txt['maininfo'], '" );</script>
 				<table border="0" width="100%" cellpadding="2" cellspacing="2">
@@ -1329,7 +1288,6 @@ function show_footer()
 				if (document.getElementById("Templates"))
 					document.getElementById("Templates").style.display = "none";
 
-
 				if (typeof(window.smfVersions) == "undefined")
 					window.smfVersions = {};
 
@@ -1367,7 +1325,6 @@ function show_footer()
 					setInnerHTML(document.getElementById("current" + filename), smfVersions[filename]);
 					setInnerHTML(document.getElementById("your" + filename), yourVersion);
 				}
-
 
 				if (typeof(window.smfLanguageVersions) == "undefined")
 					window.smfLanguageVersions = {};
