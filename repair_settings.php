@@ -1139,12 +1139,21 @@ function remove_hooks()
 // Compat mode!
 function smc_compat_initiate($db_server, $db_name, $db_user, $db_passwd, $db_prefix, $db_options = array())
 {
-	global $mysql_set_mod, $sourcedir, $db_connection, $db_prefix, $smcFunc;
+	global $sourcedir, $db_connection, $db_prefix, $smcFunc, $mysqli_found;
 
-	if (!empty($db_options['persist']))
-		$db_connection = @mysql_pconnect($db_server, $db_user, $db_passwd);
+	// Add mysqli support in case someone is trying to resurrect an old forum on a new server
+	$mysqli_found = function_exists('mysqli_connect');
+
+	if ($mysqli_found)
+		if (!empty($db_options['persist']))
+			$db_connection = @mysqli_connect('p:' . $db_server, $db_user, $db_passwd);
+		else
+			$db_connection = @mysqli_connect($db_server, $db_user, $db_passwd);
 	else
-		$db_connection = @mysql_connect($db_server, $db_user, $db_passwd);
+		if (!empty($db_options['persist']))
+			$db_connection = @mysql_pconnect($db_server, $db_user, $db_passwd);
+		else
+			$db_connection = @mysql_connect($db_server, $db_user, $db_passwd);
 
 	// Something's wrong, show an error if its fatal (which we assume it is)
 	if (!$db_connection)
@@ -1162,25 +1171,24 @@ function smc_compat_initiate($db_server, $db_name, $db_user, $db_passwd, $db_pre
 		}
 	}
 
-	// Select the database, unless told not to
-	if (empty($db_options['dont_select_db']) && !@mysql_select_db($db_name, $connection) && empty($db_options['non_fatal']))
+	// If DB not found, then dbname is wrong, return null
+	if ($mysqli_found)
 	{
-		if (file_exists($sourcedir . '/Errors.php'))
-		{
-			require_once($sourcedir . '/Errors.php');
-			display_db_error();
-		}
-		exit('Sorry, SMF was unable to connect to database.');
+		if (mysqli_select_db($db_connection, $db_name) === false)
+			return null;
 	}
 	else
-		$db_prefix = is_numeric(substr($db_prefix, 0, 1)) ? $db_name . '.' . $db_prefix : '`' . $db_name . '`.' . $db_prefix;
+	{
+		if (mysql_select_db($db_name, $db_connection) === false)
+			return null;
+	}
 
 	// Some core functions, but only once, yes?
 	if (!function_exists('smf_db_replacement__callback'))
 	{
 		function smf_db_replacement__callback($matches)
 		{
-			global $db_callback, $user_info, $db_prefix;
+			global $db_callback, $user_info, $db_prefix, $mysqli_found;
 
 			list ($values, $connection) = $db_callback;
 
@@ -1211,7 +1219,10 @@ function smc_compat_initiate($db_server, $db_name, $db_user, $db_passwd, $db_pre
 
 				case 'string':
 				case 'text':
-					return sprintf('\'%1$s\'', mysql_real_escape_string($replacement, $connection));
+					if ($mysqli_found)
+						return sprintf('\'%1$s\'', mysqli_real_escape_string($connection, $replacement));
+					else
+						return sprintf('\'%1$s\'', mysql_real_escape_string($replacement, $connection));
 				break;
 
 				case 'array_int':
@@ -1242,7 +1253,10 @@ function smc_compat_initiate($db_server, $db_name, $db_user, $db_passwd, $db_pre
 							smf_db_error_backtrace('Database error, given array of string values is empty. (' . $matches[2] . ')', '', E_USER_ERROR, __FILE__, __LINE__);
 
 						foreach ($replacement as $key => $value)
-							$replacement[$key] = sprintf('\'%1$s\'', mysql_real_escape_string($value, $connection));
+							if ($mysqli_found)
+								$replacement[$key] = sprintf('\'%1$s\'', mysqli_real_escape_string($connection, $value));
+							else
+								$replacement[$key] = sprintf('\'%1$s\'', mysql_real_escape_string($value, $connection));
 
 						return implode(', ', $replacement);
 					}
@@ -1284,7 +1298,7 @@ function smc_compat_initiate($db_server, $db_name, $db_user, $db_passwd, $db_pre
 	{
 		function smf_db_query($execute = true, $db_string, $db_values)
 		{
-			global $db_callback, $db_connection;
+			global $db_callback, $db_connection, $mysqli_found;
 
 			// Only bother if there's something to replace.
 			if (strpos($db_string, '{') !== false)
@@ -1302,7 +1316,10 @@ function smc_compat_initiate($db_server, $db_name, $db_user, $db_passwd, $db_pre
 			// We actually make the query in compat mode.
 			if ($execute === false)
 				return $db_string;
-			return mysql_query($db_string, $db_connection);
+			if ($mysqli_found)
+				return mysqli_query($db_connection, $db_string);
+			else
+				return mysql_query($db_string, $db_connection);
 		}
 	}
 
@@ -1413,15 +1430,32 @@ function smc_compat_initiate($db_server, $db_name, $db_user, $db_passwd, $db_pre
 	}
 
 	// Now, go functions, spread your love.
-	$smcFunc['db_free_result'] = 'mysql_free_result';
-	$smcFunc['db_fetch_row'] = 'mysql_fetch_row';
-	$smcFunc['db_fetch_assoc'] = 'mysql_fetch_assoc';
-	$smcFunc['db_num_rows'] = 'mysql_num_rows';
+	if ($mysqli_found)
+	{
+		$smcFunc['db_free_result'] = 'mysqli_free_result';
+		$smcFunc['db_fetch_row'] = 'mysqli_fetch_row';
+		$smcFunc['db_fetch_assoc'] = 'mysqli_fetch_assoc';
+		$smcFunc['db_num_rows'] = 'mysqli_num_rows';
+	}
+	else
+	{
+		$smcFunc['db_free_result'] = 'mysql_free_result';
+		$smcFunc['db_fetch_row'] = 'mysql_fetch_row';
+		$smcFunc['db_fetch_assoc'] = 'mysql_fetch_assoc';
+		$smcFunc['db_num_rows'] = 'mysql_num_rows';
+	}
 	$smcFunc['db_insert'] = 'smf_db_insert';
 	$smcFunc['db_query'] = 'smf_db_query';
 	$smcFunc['db_quote'] = 'smf_db_query';
 	$smcFunc['db_error_backtrace'] = 'smf_db_error_backtrace';
 	$smcFunc['db_list_tables'] = 'smf_db_list_tables';
+
+	// One last check - prefix
+	$tables = smf_db_list_tables();
+	if (!(is_array($tables) && in_array($db_prefix . 'settings' , $tables)))
+		$db_connection = null;
+
+	$db_prefix = is_numeric(substr($db_prefix, 0, 1)) ? $db_name . '.' . $db_prefix : '`' . $db_name . '`.' . $db_prefix;
 
 	return $db_connection;
 }
