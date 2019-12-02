@@ -5,10 +5,10 @@
  *
  * @package SMF
  * @author Simple Machines
- * @copyright 2011 Simple Machines
+ * @copyright 2019 Simple Machines
  * @license http://www.simplemachines.org/about/smf/license.php BSD
  *
- * @version 2.0.16
+ * @version 2.0.15
  */
 
 // If SSI.php is in the same place as this file, and SMF isn't defined, this is being run standalone.

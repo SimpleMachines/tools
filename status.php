@@ -5,10 +5,10 @@
  *
  * @package SMF
  * @author Simple Machines
- * @copyright 2011 Simple Machines
+ * @copyright 2019 Simple Machines
  * @license http://www.simplemachines.org/about/smf/license.php BSD
  *
- * @version 2.0.16
+ * @version 2.0.15
  */
 
 // Forum slow? Having performance problems?  This little blue pill will assist in finding the problem!

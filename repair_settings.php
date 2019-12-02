@@ -5,11 +5,11 @@
  *
  * @package SMF
  * @author Simple Machines
- * @copyright 2017 Simple Machines
+ * @copyright 2019 Simple Machines
  * @license http://www.simplemachines.org/about/smf/license.php BSD
  *
  * @version 2.1
- * @updated 2017-02-08
+ * @updated 2019-12-02
  */
 
 // We need the Settings.php info for database stuff.
