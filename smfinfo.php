@@ -8,7 +8,7 @@
  * @copyright 2019 Simple Machines
  * @license http://www.simplemachines.org/about/smf/license.php BSD
  *
- * @version 2.0.15
+ * @version 2.0.16
  */
 
 // If SSI.php is in the same place as this file, and SMF isn't defined, this is being run standalone.
@@ -79,6 +79,12 @@ function load_txt_strings()
 	$txt['support_versions_current'] = 'Current SMF Info version';
 	$txt['support_versions_forum'] = 'Your SMF Info version';
 	$txt['previousCharacterSet'] = 'Previous character set';
+	$txt['db_type'] = 'DB type';
+	$txt['db_prefix'] = 'DB prefix';
+	$txt['language'] = 'Language';
+	$txt['db_mb4'] = 'DB true multibyte support';
+	$txt['db_character_set'] = 'DB character set';
+	$txt['global_character_set'] = 'Global character set';
 
 	// PHP Specific Info
 	$txt['relevant_info'] = 'Relevant PHP Settings';
@@ -155,6 +161,12 @@ load_txt_strings();
 // what is in the $txt keys/brackets above
 // Makes for easy adding of extra info, or deleting
 $context['smfinfo'] = array (
+	'db_type' => !empty($db_type) ? $db_type : '<i>' . $txt['empty'] . '</i>',
+	'db_prefix' => !empty($db_prefix) ? $db_prefix : '<i>' . $txt['empty'] . '</i>',
+	'language' => !empty($language) ? $language : '<i>' . $txt['empty'] . '</i>',
+	'db_mb4' => !empty($db_mb4) ? $db_mb4 : '<i>' . $txt['empty'] . '</i>',
+	'db_character_set' => !empty($db_character_set) ? $db_character_set : '<i>' . $txt['empty'] . '</i>',
+	'global_character_set' => !empty($modSettings['global_character_set']) ? $modSettings['global_character_set'] : '<i>' . $txt['empty'] . '</i>',
 	'db_last_error' => !empty($db_last_error) ? date(DATE_RFC822, $db_last_error) : $txt['none'],
 	'auto_fix_db' => get_smf_setting('autoFixDatabase', 'on'),
 	'db_persist' => get_smf_setting('db_persist', 'off'),
