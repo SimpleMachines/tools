@@ -6,14 +6,18 @@
  * @package SMF
  * @author Simple Machines
  * @copyright 2019 Simple Machines
- * @license http://www.simplemachines.org/about/smf/license.php BSD
+ * @license https://www.simplemachines.org/about/smf/license.php BSD
  *
  * @version 2.0.16
  */
 
 // If SSI.php is in the same place as this file, and SMF isn't defined, this is being run standalone.
 if (file_exists(dirname(__FILE__) . '/SSI.php') && !defined('SMF'))
+{
+	$old_error_reporting = error_reporting(0);
 	require_once(dirname(__FILE__) . '/SSI.php');
+	error_reporting($old_error_reporting);
+}
 
 // Hmm... no SSI.php and no SMF?
 elseif(!defined('SMF'))
@@ -442,7 +446,7 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 	</head>
 	<body>
 		<div id="header">
-			<a href="http://www.simplemachines.org/" target="_blank"><img src="' . $smflogo . '" style="width: 258px; float: right;" alt="Simple Machines" border="0" /></a>
+			<a href="https://www.simplemachines.org/" target="_blank"><img src="' . $smflogo . '" style="width: 258px; float: right;" alt="Simple Machines" border="0" /></a>
 			<div>', $txt['title'], '</div>
 		</div>
 		<div id="content">';
@@ -456,7 +460,7 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 			', $txt['support_versions_current'], ':
 			<i id="smfInfoVersion" style="white-space: nowrap;">??</i><br />
 
-		<script language="JavaScript" type="text/javascript" src="http://www.simplemachines.org/smf/current-smfinfo.js"></script>
+		<script language="JavaScript" type="text/javascript" src="https://www.simplemachines.org/smf/current-smfinfo.js"></script>
 		<script language="JavaScript" type="text/javascript"><!-- // --><![CDATA[
 			function smfInfoCurrentVersion()
 			{
@@ -1269,7 +1273,7 @@ function show_footer()
 	echo '
 			</div>
 			<div style="clear: left">
-				', sprintf($forum_copyright, $forum_version),' | <a href="http://validator.w3.org/check?uri=referer">XHTML</a> | <a href="http://jigsaw.w3.org/css-validator/">CSS</a>
+				', sprintf($forum_copyright, $forum_version),' | <a href="https://validator.w3.org/check?uri=referer">XHTML</a> | <a href="https://jigsaw.w3.org/css-validator/">CSS</a>
 			</div>
 		</div>';
 
@@ -1280,7 +1284,7 @@ function show_footer()
 
 	echo '
 		<script language="JavaScript" type="text/javascript" src="', $boardurl, '/Themes/default/', (strpos($context['forum_version'], '2.') !== false ? 'scripts/' : ''), 'script.js"></script>
-		<script language="JavaScript" type="text/javascript" src="http://www.simplemachines.org/smf/detailed-version.js?version=', $context['forum_version'], '"></script>
+		<script language="JavaScript" type="text/javascript" src="https://www.simplemachines.org/smf/detailed-version.js?version=', $context['forum_version'], '"></script>
 		<script language="JavaScript" type="text/javascript"><!-- // --><![CDATA[
 			var swaps = {};
 
@@ -1952,7 +1956,7 @@ function get_linux_data()
 			$proc = explode(' ', $processes[$i], 5);
 			$additional = @implode('', @get_file_data('/proc/' . $proc[0] . '/statm'));
 
-			if ($proc[4]{0} != '[' && strpos($proc[4], ' ') !== false)
+			if ($proc[4][0] != '[' && strpos($proc[4], ' ') !== false)
 				$proc[4] = strtok($proc[4], ' ');
 
 			$context['running_processes'][$proc[0]] = array(
