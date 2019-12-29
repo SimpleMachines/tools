@@ -18,12 +18,11 @@ if (file_exists(dirname(__FILE__) . '/SSI.php') && !defined('SMF'))
 	require_once(dirname(__FILE__) . '/SSI.php');
 	error_reporting($old_error_reporting);
 }
-
 // Hmm... no SSI.php and no SMF?
 elseif(!defined('SMF'))
 	die('<b>Error:</b> Cannot start - please verify you put this in the same place as SMF\'s SSI.php.');
 
-$smfinfo_version = '1.1';
+$smfinfo_version = '1.2';
 
 initialize();
 
@@ -238,40 +237,77 @@ else
 	$smflogo = './Themes/default/images/smflogo.gif';
 
 echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml"', !empty($txt['lang_rtl']) ? ' dir="rtl"' : '', '>
 	<head>
-
-		<meta http-equiv="Content-Type" content="text/html; charset=', $context['character_set'], '" />
+		<meta http-equiv="Content-Type" content="text/html; charset=', isset($txt['lang_character_set']) ? $txt['lang_character_set'] : 'UTF-8', '" />
 		<title>', $txt['title'], '</title>
+
 		<style type="text/css">
 			body
 			{
-				background-color: #E5E5E8;
-				margin: 0px;
-				padding: 0px;
+				background: #e9eef2;
+				font: 83.33%/150% "Segoe UI", "Helvetica Neue", "Nimbus Sans L", Arial, "Liberation Sans", sans-serif;
+				color: #4d4d4d;
+				display: flex;
+				flex-direction: column;
+				min-height: 100vh;
 			}
 			body, td
 			{
-				color: #000000;
 				font-size: 11px;
-				font-family: verdana, sans-serif;
 			}
 			div#header
 			{
-				background-image: url(Themes/default/images/catbg.jpg);
-				background-repeat: repeat-x;
-				background-color: #88A6C0;
-				padding: 22px 4% 12px 4%;
-				color: white;
-				font-family: Georgia, serif;
-				font-size: xx-large;
-				border-bottom: 1px solid black;
-				height: 40px;
+				padding: 2px 2px 12px 2px;
+				width: 90%;
+				display: flex;
+				align-items: flex-end;
+				max-width: 1200px;
+				margin: 0 auto;
 			}
-			div#content
+			h1.forumtitle
 			{
-				padding: 20px 30px;
+				color: #a85400;
+				text-shadow: -1px -1px 0 rgba(0, 0, 0, 0.5), 1px 1px 0 #fff;
+				font-size: 1.8em;
+				font-family: "Tahoma", sans-serif;
+				padding: 22px 12px 6px 10px;
+				font-weight: normal;
+				flex: 1 1 auto;
+    		}
+    		a#logo
+    		{
+    			float: right;
+    			margin: 16px 0 0 0;
+    			padding-right: 2px;
+				font-size: 1.4em;
+    		}
+			div#wrapper
+			{
+				max-width: 1200px;
+				margin: 0 auto;
+				width: 90%;
+				clear: both;
+				background: #fff;
+				border: 1px solid #b8b8b8;
+				border-radius: 8px;
+				box-shadow: 0 2px 3px rgba(0, 0, 0, 0.14);
 			}
+			div#footer
+			{
+				margin: 4em 0 0 0;
+				padding: 10px 5%;
+				background: #3e5a78;
+				border-top: 3px solid #b2b6bd;
+				flex: none;
+				display: block;
+				font-family: Verdana, sans-serif;    			
+    		}
+    		div#footer a
+    		{
+    		    font-size: 0.9em;
+				color: #fff;
+    		}
 			div.panel
 			{
 				position: relative;
@@ -305,16 +341,12 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 			}
 
 			.dynamic-tab-pane-control .tab-page{
-				border:1px solid #919b9c;
-				background:#f6f6f6;
 				z-index:2;
-				position:relative;
 				top:-2px;
 				font:11px Tahoma;
 				color:#333;
 				padding:5px;
 				width:97%;
-				float:left;
 			}
 
 			/* This is for phpinfo */
@@ -381,7 +413,10 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 				background-color:#fff;
 				font-size:8px;
 			}
-
+			ul
+			{
+				list-style: none;
+			}
 		</style>
 		<script language="JavaScript" type="text/javascript"><!-- // --><![CDATA[
 			var sections = new Array();
@@ -443,13 +478,14 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 			}
 			addLoadEvent(function() {swapSection(0);});
 		// ]]></script>
-	</head>
-	<body>
+</head>
+<body>
+	<div id="footerfix">
 		<div id="header">
-			<a href="https://www.simplemachines.org/" target="_blank"><img src="' . $smflogo . '" style="width: 258px; float: right;" alt="Simple Machines" border="0" /></a>
-			<div>', $txt['title'], '</div>
+			<h1 class="forumtitle">', $txt['title'], '</h1>
+			<a id="logo" href="https://www.simplemachines.org/" target="_blank"><img src="' . $smflogo . '" alt="Simple Machines" border="0" /></a>
 		</div>
-		<div id="content">';
+		<div id="wrapper">';
 
 	if (allowedTo('admin_forum'))
 		echo '
@@ -1271,11 +1307,15 @@ function show_footer()
 
 	$t = sprintf($forum_copyright, $forum_version);
 	echo '
-			</div>
-			<div style="clear: left">
-				', sprintf($forum_copyright, $forum_version),' | <a href="https://validator.w3.org/check?uri=referer">XHTML</a> | <a href="https://jigsaw.w3.org/css-validator/">CSS</a>
-			</div>
-		</div>';
+			</div><!-- #smfinfo -->
+		</div><!-- #wrapper -->
+	</div><!-- #footerfix -->
+
+<div id="footer">
+		<ul>
+			<li class="copyright"><a href="https://www.simplemachines.org/" title="Simple Machines Forum" target="_blank" rel="noopener">', $t, '</a></li>
+		</ul>
+	</div>';
 
 	/* Below is the hefty javascript for this. Upon opening the page it checks the current file versions with ones
 	   held at simplemachines.org and works out if they are up to date.  If they aren't it colors that files number
