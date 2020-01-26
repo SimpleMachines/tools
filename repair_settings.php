@@ -120,9 +120,12 @@ if (isset($_POST['submit']))
 if (isset($_POST['remove_hooks']))
 	remove_hooks();
 
-// try to find the smflogo: could be a .gif or a .png
-$smflogo = "Themes/default/images/smflogo.png";
-if (!file_exists(dirname(__FILE__) . "/" . $smflogo))
+// try to find the smflogo: could be a .gif or a .png or an .svg
+if (file_exists(dirname(__FILE__) . "/Themes/default/images/smflogo.svg"))
+	$smflogo = "Themes/default/images/smflogo.svg";
+elseif (file_exists(dirname(__FILE__) . "/Themes/default/images/smflogo.png"))
+	$smflogo = "Themes/default/images/smflogo.png";
+else 
 	$smflogo = "Themes/default/images/smflogo.gif";
 
 // Note that we're using the default URLs because we aren't even going to try to use Settings.php's settings.
@@ -314,6 +317,12 @@ function initialize_inputs()
 	{
 		if (!defined('SMF'))
 			define('SMF', 1);
+		
+		if (!defined('POSTGRE_TITLE'))
+			define('POSTGRE_TITLE', 'PostgreSQL');
+
+		if (!defined('MYSQL_TITLE'))
+			define('MYSQL_TITLE', 'MySQL');
 
 		if (empty($smcFunc))
 			$smcFunc = array();
