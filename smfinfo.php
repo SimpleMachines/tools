@@ -5,10 +5,10 @@
  *
  * @package SMF
  * @author Simple Machines
- * @copyright 2019 Simple Machines
+ * @copyright 2020 Simple Machines
  * @license https://www.simplemachines.org/about/smf/license.php BSD
  *
- * @version 2.0.16
+ * @version 2.0.17
  */
 
 // If SSI.php is in the same place as this file, and SMF isn't defined, this is being run standalone.
@@ -489,6 +489,7 @@ echo '<!DOCTYPE html>
 		<div id="wrapper">';
 
 	if (allowedTo('admin_forum'))
+	{
 		echo '
 		<div class="windowbg" style="margin: 1ex; padding: 1ex 2ex; border: 1px dashed green; color: green;">
 			', sprintf($txt['smfinfo_pass'], $smfInfo), '<br /><br />
@@ -523,8 +524,8 @@ echo '<!DOCTYPE html>
 			{
 				smfInfoCurrentVersion();';
 
-	if ($context['browser']['is_ie'] && !$context['browser']['is_ie4'])
-		echo '
+		if ($context['browser']['is_ie'] && !$context['browser']['is_ie4'])
+			echo '
 				if (typeof(smf_codeFix) != "undefined")
 					window.detachEvent("onload", smf_codeFix);
 				window.attachEvent("onload",
@@ -537,13 +538,15 @@ echo '<!DOCTYPE html>
 				if (typeof(smf_codeFix) != "undefined")
 					window.attachEvent("onload", smf_codeFix);';
 
-	echo '
+		echo '
 
 				if (oldonload)
 					oldonload();
 			}
 		// ]]></script>
 		</div>';
+	}
+
 	echo '
 		<select id="menuDropdown" onchange="swapSection(this[this.selectedIndex].value); return true;">
 			<option value="0">-- Menu --</option>
@@ -1553,7 +1556,9 @@ function get_file_versions($core = false)
 	// The version looks rougly like... that.
 	if (preg_match('~\$forum_version\s=\s\'SMF (.+)\'~i', $header, $match) == 1)
 		$context['forum_version'] = $match[1];
-
+	// SMF 2.1+: define('SMF_VERSION', '2.1 RC2');
+	elseif (preg_match('~define\(\'SMF_VERSION\',\s*\'(.+)\'\);~i', $header, $match) == 1)
+		$context['forum_version'] = $match[1];
 	// Not found!  This is bad.
 	else
 		$context['forum_version'] = '??';
