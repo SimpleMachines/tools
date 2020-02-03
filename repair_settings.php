@@ -324,6 +324,9 @@ function initialize_inputs()
 		if (!defined('MYSQL_TITLE'))
 			define('MYSQL_TITLE', 'MySQL');
 
+		if (!defined('TIME_START'))
+			define('TIME_START', microtime(true));
+
 		if (empty($smcFunc))
 			$smcFunc = array();
 
