@@ -1055,33 +1055,33 @@ function set_settings()
 			}
 	}
 
-	// In SMF 2.1, its always an array.
-	if ($context['smfVersion'] == '2.1')
+	// Build the update string for attachment dirs
+	if (!empty($attach_dirs))
 	{
-		$setString[] = array('attachmentUploadDir', json_encode($attach_dirs));
-	}
-	// Only one dir...or maybe nothing at all
-	elseif (count($attach_dirs) > 1)
-	{
-		$setString[] = array('attachmentUploadDir', @serialize($attach_dirs));
-		// If we want to (re)set currentAttachmentUploadDir here is a good place
-// 		foreach ($attach_dirs as $id => $attach_dir)
-// 			if (is_dir($attach_dir) && is_writable($attach_dir))
-// 				$setString[] = array('currentAttachmentUploadDir', $id + 1);
-	}
-	elseif (!$context['is_legacy'] && isset($attach_dirs[1]))
-	{
-		$setString[] = array('attachmentUploadDir', $attach_dirs[1]);
-		$setString[] = array('currentAttachmentUploadDir', 0);
-	}
-	elseif ($context['is_legacy'] && isset($attach_dirs[0]))
-	{
-		$setString[] = array('attachmentUploadDir', $attach_dirs[0]);
-	}
-	else
-	{
-		$setString[] = array('attachmentUploadDir', '');
-		$setString[] = array('currentAttachmentUploadDir', 0);
+		// In SMF 2.1, its always an array.
+		if ($context['smfVersion'] == '2.1')
+		{
+			$setString[] = array('attachmentUploadDir', json_encode($attach_dirs));
+		}
+		// Only one dir...or maybe nothing at all
+		elseif (count($attach_dirs) > 1)
+		{
+			$setString[] = array('attachmentUploadDir', @serialize($attach_dirs));
+		}
+		elseif (!$context['is_legacy'] && isset($attach_dirs[1]))
+		{
+			$setString[] = array('attachmentUploadDir', $attach_dirs[1]);
+			$setString[] = array('currentAttachmentUploadDir', 0);
+		}
+		elseif ($context['is_legacy'] && isset($attach_dirs[0]))
+		{
+			$setString[] = array('attachmentUploadDir', $attach_dirs[0]);
+		}
+		else
+		{
+			$setString[] = array('attachmentUploadDir', '');
+			$setString[] = array('currentAttachmentUploadDir', 0);
+		}
 	}
 
 	if (!empty($setString))
