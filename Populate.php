@@ -200,11 +200,16 @@ class Populate
 				'approved' => TRUE
 			);
 
+			$makenew = ($this->counters['topics']['current'] < $this->counters['topics']['max']) && (mt_rand() < (int)(mt_getrandmax() * ($this->counters['topics']['max'] / $this->counters['messages']['max'])));
+
 			$topicOptions = array(
-				'id' => $this->counters['topics']['current'] < $this->counters['topics']['max'] && mt_rand() < (int)(mt_getrandmax() * ($this->counters['topics']['max'] / $this->counters['messages']['max'])) ? 0 : ($this->counters['topics']['current'] < $this->counters['topics']['max'] ? mt_rand(1, ++$this->counters['topics']['current']) : mt_rand(1, $this->counters['topics']['current'])),
+				'id' => $makenew ? 0 : mt_rand(1, $this->counters['topics']['current']),
 				'board' => mt_rand(1, $this->counters['boards']['max']),
 				'mark_as_read' => TRUE,
 			);
+
+			if ($makenew)
+				$this->counters['topics']['current']++;
 
 			$member = mt_rand(1, $this->counters['members']['max']);
 			$posterOptions = array(
@@ -248,14 +253,28 @@ class Populate
 
 	private function fixupTopicsBoards ()
 	{
-		global $smcFunc, $sourcedir;
+		global $smcFunc, $sourcedir, $db_type;
 
-		$smcFunc['db_query']('', '
-			UPDATE {db_prefix}messages as mes, {db_prefix}topics as top
-			SET mes.id_board = top.id_board
-			WHERE mes.id_topic = top.id_topic',
-			array()
-		);
+		// No $smcFunc exists for this, so we will brute force it...
+		if ($db_type == 'postgresql')
+		{
+			$smcFunc['db_query']('', '
+				UPDATE {db_prefix}messages
+				SET id_board = {db_prefix}topics.id_board
+				FROM {db_prefix}topics
+				WHERE {db_prefix}messages.id_topic = {db_prefix}topics.id_topic',
+				array()
+			);
+		}
+		else
+		{
+			$smcFunc['db_query']('', '
+				UPDATE {db_prefix}messages as mes, {db_prefix}topics as top
+				SET mes.id_board = top.id_board
+				WHERE mes.id_topic = top.id_topic',
+				array()
+			);
+		}
 	}
 
 	private function complete ($end)
