@@ -1313,7 +1313,7 @@ function smc_compat_initiate($db_server, $db_name, $db_user, $db_passwd, $db_pre
 	// Because this is just compat mode, this is good enough.
 	if (!function_exists('smf_db_query'))
 	{
-		function smf_db_query($execute = true, $db_string, $db_values)
+		function smf_db_query($execute = true, $db_string = '', $db_values = [])
 		{
 			global $db_callback, $db_connection, $mysqli_found;
 
@@ -1343,7 +1343,7 @@ function smc_compat_initiate($db_server, $db_name, $db_user, $db_passwd, $db_pre
 	// Insert some data...
 	if (!function_exists('smf_db_insert'))
 	{
-		function smf_db_insert($method = 'replace', $table, $columns, $data, $keys, $disable_trans = false)
+		function smf_db_insert($method = 'replace', $table = '', $columns = [], $data = [], $keys = [], $disable_trans = false)
 		{
 			global $smcFunc, $db_connection, $db_prefix;
 
