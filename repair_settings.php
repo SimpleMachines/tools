@@ -96,6 +96,7 @@ $txt['boarddir'] = 'Forum Directory';
 $txt['sourcedir'] = 'Sources Directory';
 $txt['tasksdir'] = 'Tasks Directory';
 $txt['packagesdir'] = 'Packages Directory';
+$txt['export_dir'] = 'Exports Directory';
 $txt['attachmentUploadDir'] = 'Attachment Directory';
 $txt['avatar_url'] = 'Avatar URL';
 $txt['avatar_directory'] = 'Avatar Directory';
@@ -125,7 +126,7 @@ if (file_exists(dirname(__FILE__) . "/Themes/default/images/smflogo.svg"))
 	$smflogo = "Themes/default/images/smflogo.svg";
 elseif (file_exists(dirname(__FILE__) . "/Themes/default/images/smflogo.png"))
 	$smflogo = "Themes/default/images/smflogo.png";
-else 
+else
 	$smflogo = "Themes/default/images/smflogo.gif";
 
 // Note that we're using the default URLs because we aren't even going to try to use Settings.php's settings.
@@ -133,7 +134,7 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 <html xmlns="http://www.w3.org/1999/xhtml">
 	<head>
 		<meta name="robots" content="noindex" />
-		<title>', isset($context['smfVersion']) ? sprintf($txt['smf_repair_settings'], $context['smfVersion']) : 
+		<title>', isset($context['smfVersion']) ? sprintf($txt['smf_repair_settings'], $context['smfVersion']) :
 $txt['smf11_repair_settings'], '</title>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 		<script type="text/javascript" src="Themes/default/scripts/script.js"></script>
@@ -243,7 +244,7 @@ $txt['smf11_repair_settings'], '</title>
 	<body>
 		<div id="header">
 			<a href="http://www.simplemachines.org/" target="_blank"><img src="' . $smflogo . '" style="width: 250px; float: right;" alt="Simple Machines" border="0" /></a>
-			<div>', isset($context['smfVersion']) ? sprintf($txt['smf_repair_settings'], $context['smfVersion']) : 
+			<div>', isset($context['smfVersion']) ? sprintf($txt['smf_repair_settings'], $context['smfVersion']) :
 $txt['smf11_repair_settings'], '</div>
 		</div>
 		<div id="content">';
@@ -317,7 +318,7 @@ function initialize_inputs()
 	{
 		if (!defined('SMF'))
 			define('SMF', 1);
-		
+
 		if (!defined('POSTGRE_TITLE'))
 			define('POSTGRE_TITLE', 'PostgreSQL');
 
@@ -413,7 +414,7 @@ function initialize_inputs()
 		// 2.0 supports sqlite.
 		if (file_exists($sourcedir . '/Subs-Db-sqlite.php') && (empty($context['smfVersion']) || $context['smfVersion'] == '2.0'))
 		{
-			$db_type_options['options']['sqlite'] = 'SQLite';			
+			$db_type_options['options']['sqlite'] = 'SQLite';
 
 			if ($db_type == 'sqlite')
 				$db_type_options['default'] = $db_type;
@@ -530,6 +531,7 @@ function show_settings()
 			'sourcedir' => array('flat', 'string'),
 			'tasksdir' => array('flat', 'string'),
 			'packagesdir' => array('flat', 'string'),
+			'export_dir' => array('db', 'string'),
 			'attachmentUploadDir' => array('db', 'array_string'),
 			'avatar_url' => array('db', 'string'),
 			'avatar_directory' => array('db', 'string'),
@@ -553,7 +555,7 @@ function show_settings()
 
 	// These settings didn't exist in 2.0 or 1.1
 	if ($context['smfVersion'] == '2.0' || $context['smfVersion'] == '1.1')
-		unset($known_settings['cache_settings']['cache_accelerator'], $known_settings['cache_settings']['cache_enable'], $known_settings['cache_settings']['cache_memcached'], $known_settings['path_url_settings']['tasksdir'], $known_settings['path_url_settings']['packagesdir']);
+		unset($known_settings['cache_settings']['cache_accelerator'], $known_settings['cache_settings']['cache_enable'], $known_settings['cache_settings']['cache_memcached'], $known_settings['path_url_settings']['tasksdir'], $known_settings['path_url_settings']['export_dir'], $known_settings['path_url_settings']['packagesdir']);
 
 	// Let's assume we don't want to change the current theme
 	$settings['theme_default'] = 0;
@@ -570,6 +572,9 @@ function show_settings()
 
 	if ($context['smfVersion'] == '2.1' && file_exists(dirname(__FILE__) . '/Sources/tasks'))
 		$known_settings['path_url_settings']['tasksdir'][2] = realpath(dirname(__FILE__) . '/Sources/tasks');
+
+	if ($context['smfVersion'] == '2.1' && file_exists(dirname(__FILE__) . '/exports'))
+		$known_settings['path_url_settings']['export_dir'][2] = realpath(dirname(__FILE__) . '/exports');
 
 	if (file_exists(dirname(__FILE__) . '/cache') && isset($known_settings['cache_settings']['cachedir']))
 		$known_settings['cache_settings']['cachedir'][2] = realpath(dirname(__FILE__) . '/cache');
@@ -806,7 +811,7 @@ function show_settings()
 				foreach ($info[3] as $infoId => $infoTitle)
 					echo '
 									<option value="', $infoId, '"', isset($settings[$setting]) && $settings[$setting] == $infoId ? ' selected="selected"' : '', '>', $infoTitle, '</option>';
-								
+
 				echo '
 								</select>';
 
@@ -1484,7 +1489,7 @@ function findSources()
 	{
 		if (in_array($line, array('.', '..', 'blank.gif', 'index', '.htaccess')))
 			continue;
-		if (is_dir($line)) 
+		if (is_dir($line))
 			$dirs[] = $line;
 		else
 			$files[] = $line;
