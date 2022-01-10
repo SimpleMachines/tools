@@ -97,6 +97,7 @@ $txt['sourcedir'] = 'Sources Directory';
 $txt['tasksdir'] = 'Tasks Directory';
 $txt['packagesdir'] = 'Packages Directory';
 $txt['export_dir'] = 'Exports Directory';
+$txt['attachment_basedirectories'] = 'Attachment Basedirectory';
 $txt['attachmentUploadDir'] = 'Attachment Directory';
 $txt['avatar_url'] = 'Avatar URL';
 $txt['avatar_directory'] = 'Avatar Directory';
@@ -532,6 +533,7 @@ function show_settings()
 			'tasksdir' => array('flat', 'string'),
 			'packagesdir' => array('flat', 'string'),
 			'export_dir' => array('db', 'string'),
+			'attachment_basedirectories' => array('db', 'array_string'),
 			'attachmentUploadDir' => array('db', 'array_string'),
 			'avatar_url' => array('db', 'string'),
 			'avatar_directory' => array('db', 'string'),
@@ -555,7 +557,7 @@ function show_settings()
 
 	// These settings didn't exist in 2.0 or 1.1
 	if ($context['smfVersion'] == '2.0' || $context['smfVersion'] == '1.1')
-		unset($known_settings['cache_settings']['cache_accelerator'], $known_settings['cache_settings']['cache_enable'], $known_settings['cache_settings']['cache_memcached'], $known_settings['path_url_settings']['tasksdir'], $known_settings['path_url_settings']['export_dir'], $known_settings['path_url_settings']['packagesdir']);
+		unset($known_settings['cache_settings']['cache_accelerator'], $known_settings['cache_settings']['cache_enable'], $known_settings['cache_settings']['cache_memcached'], $known_settings['path_url_settings']['tasksdir'], $known_settings['path_url_settings']['export_dir'], $known_settings['path_url_settings']['packagesdir'], $known_settings['path_url_settings']['attachment_basedirectories']);
 
 	// Let's assume we don't want to change the current theme
 	$settings['theme_default'] = 0;
@@ -959,6 +961,7 @@ function set_settings()
 	$theme_updates = isset($_POST['themesettings']) ? $_POST['themesettings'] : array();
 	$file_updates = isset($_POST['flatsettings']) ? $_POST['flatsettings'] : array();
 	$attach_dirs = array();
+	$attach_base_dirs = array();
 
 	if (empty($db_updates['theme_default']))
 		unset($db_updates['theme_default']);
@@ -1058,6 +1061,12 @@ function set_settings()
 				$attach_dirs[$attach_count++] = $value[1];
 				unset($setString[$key]);
 			}
+			elseif (strpos($value[0], 'attachment_basedirectories') == 0 && strpos($value[0], 'attachment_basedirectories') !== false)
+			{
+				$index = substr($value[0], strlen('attachment_basedirectories_'));
+				$attach_base_dirs[$index] = $value[1];
+				unset($setString[$key]);
+			}
 	}
 
 	// Build the update string for attachment dirs
@@ -1067,6 +1076,7 @@ function set_settings()
 		if ($context['smfVersion'] == '2.1')
 		{
 			$setString[] = array('attachmentUploadDir', json_encode($attach_dirs));
+			$setString[] = array('attachment_basedirectories', json_encode($attach_base_dirs));
 		}
 		// Only one dir...or maybe nothing at all
 		elseif (count($attach_dirs) > 1)
