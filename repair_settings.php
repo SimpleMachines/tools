@@ -1079,7 +1079,8 @@ function set_settings()
 		if ($context['smfVersion'] == '2.1')
 		{
 			$setString[] = array('attachmentUploadDir', json_encode($attach_dirs));
-			$setString[] = array('attachment_basedirectories', json_encode($attach_base_dirs));
+			if (!empty($attach_base_dirs))
+				$setString[] = array('attachment_basedirectories', json_encode($attach_base_dirs));
 		}
 		// Only one dir...or maybe nothing at all
 		elseif (count($attach_dirs) > 1)
