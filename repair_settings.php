@@ -731,6 +731,9 @@ function show_settings()
 
 		foreach ($section as $setting => $info)
 		{
+			if (!array_key_exists($setting, $settings))
+				continue;
+
 			if ($info[0] == 'hidden')
 				continue;
 
