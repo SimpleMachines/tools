@@ -551,6 +551,13 @@ function show_settings()
 		'theme_path_url_settings' => array(),
 	);
 
+	// These settings are optional and won't be shown if the don't exist
+	$optional_settings = array(
+		'path_url_settings' => array(
+			'attachment_basedirectories'
+		)
+	);
+
 	// 1.x didn't have ssi_x, nor cachedir
 	if ($context['is_legacy'])
 		unset($known_settings['database_settings']['ssi_db_user'], $known_settings['database_settings']['ssi_db_passwd'], $known_settings['cache_settings']['cachedir'], $known_settings['path_url_settings']['custom_avatar_url'], $known_settings['path_url_settings']['custom_avatar_dir']);
@@ -731,7 +738,7 @@ function show_settings()
 
 		foreach ($section as $setting => $info)
 		{
-			if (!array_key_exists($setting, $settings))
+			if (!array_key_exists($setting, $settings) && isset($optional_settings[$settings_section]) && in_array($setting, $optional_settings[$settings_section]))
 				continue;
 
 			if ($info[0] == 'hidden')
