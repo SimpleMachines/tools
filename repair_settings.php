@@ -773,10 +773,9 @@ function show_settings()
 				if (!(isset($array_settings) && is_array($array_settings)) && !is_array($settings[$setting]))
 					$array_settings = @unserialize($settings[$setting]);
 				if (!isset($array_settings) || !is_array($array_settings))
-					$array_settings = array($settings[$setting]);
+					$array_settings = array(1 => $settings[$setting]);
 
-				$item = 1;
-				foreach ($array_settings as $array_setting)
+				foreach ($array_settings as $item => $array_setting)
 				{
 					$suggested = false;
 					echo '
@@ -1062,11 +1061,11 @@ function set_settings()
 	}
 	else
 	{
-		$attach_count = 1;
 		foreach ($setString as $key => $value)
 			if (strpos($value[0], 'attachmentUploadDir') == 0 && strpos($value[0], 'attachmentUploadDir') !== false)
 			{
-				$attach_dirs[$attach_count++] = $value[1];
+				$index = substr($value[0], strlen('attachmentUploadDir_'));
+				$attach_dirs[$index] = $value[1];
 				unset($setString[$key]);
 			}
 	}
