@@ -932,6 +932,17 @@ function guess_attachments_directories($id, $array_setting)
 			if (strrpos($array_setting, $dirname) == (strlen($array_setting) - strlen($dirname)))
 				return array(dirname(__FILE__) . '/' . $dirname);
 
+	// 3rd guess: sub directory names
+	if (!empty($availableDirs))
+		foreach ($availableDirs as $dirname)
+			if (strrpos($array_setting, DIRECTORY_SEPARATOR . $dirname . DIRECTORY_SEPARATOR) > 0)
+			{
+				$subdir = opendir(dirname(__FILE__) . DIRECTORY_SEPARATOR . $dirname);
+				while (false !== ($file = readdir($subdir)))
+					if (strrpos($array_setting, $dirname . DIRECTORY_SEPARATOR . $file) == (strlen($array_setting) - strlen($dirname . DIRECTORY_SEPARATOR . $file)))
+						return array(dirname(__FILE__) . DIRECTORY_SEPARATOR . $dirname . DIRECTORY_SEPARATOR . $file);
+			}
+
 	// Doing it later saves in case the attached files have been deleted from the file system
 	if (empty($usedDirs) && empty($availableDirs))
 		return false;
