@@ -5,15 +5,16 @@
  *
  * @package fixp
  * @author emanuele
- * @copyright 2011 emanuele, Simple Machines
- * @license http://www.simplemachines.org/about/smf/license.php BSD
+ * @copyright 2021 emanuele, Simple Machines
+ * @license https://www.simplemachines.org/about/smf/license.php BSD
  *
- * @version 0.1
+ * @version 0.2
  */
 
 // A nice menu button
 define('SMF_INTEGRATION_SETTINGS', serialize(array(
 	'integrate_menu_buttons' => 'fixp_menu_button',)));
+
 // Let's use the default theme
 $ssi_theme = 1;
 $forum_version = 'Fix Packages 0.1';
@@ -31,7 +32,6 @@ else
  */
 $context['override_security'] = false;
 
-
 /**
  * 
  * Do you want to add a new language?
@@ -40,7 +40,7 @@ $context['override_security'] = false;
  * and tranlsate it. ;D
  * 
  */
-function fixp_english ()
+function fixp_english(): void
 {
 	global $txt;
 
@@ -65,7 +65,7 @@ fixp_main();
 // and then let's throw out the template! :P
 obExit(null, null, true);
 
-function fixp_menu_button (&$buttons)
+function fixp_menu_button(array &$buttons): void
 {
 	global $boardurl, $txt, $context;
 	fixp_loadLanguage();
@@ -81,17 +81,18 @@ function fixp_menu_button (&$buttons)
 	);
 }
 
-function fixp_loadLanguage ()
+function fixp_loadLanguage(): void
 {
 	global $user_info;
 
 	fixp_english();
+
 	$flang = 'fixp_' . (!empty($user_info['language']) ? $user_info['language'] : '');
 	if (function_exists($flang) && $flang != 'fixp_english')
-		return $flang();
+		call_user_func($flang);
 }
 
-function fixp_main ()
+function fixp_main(): void
 {
 	global $txt, $sourcedir, $boarddir, $boardurl, $context, $user_info, $smcFunc;
 
@@ -111,7 +112,7 @@ function fixp_main ()
 		checkSession();
 
 		foreach ($_POST['remove'] as $id)
-			if (isset($id) && is_numeric($id))
+			if (!empty($id) && is_numeric($id))
 			{
 				if (!empty($context['install']))
 					$smcFunc['db_query']('', '
@@ -126,7 +127,7 @@ function fixp_main ()
 							'id_member' => $user_info['id'],
 							'member_name' => $user_info['name'],
 							'time_removed' => time(),
-							'inst_package_id' => $id,
+							'inst_package_id' => (int) $id,
 					));
 				else
 					$smcFunc['db_query']('', '
@@ -138,18 +139,20 @@ function fixp_main ()
 							install_state = 1
 						WHERE id_install = {int:inst_package_id}',
 						array(
-							'inst_package_id' => $id,
+							'inst_package_id' => (int) $id,
 					));
 			}
 
 		require_once($sourcedir . '/Subs-Package.php');
 		package_put_contents($boarddir . '/Packages/installed.list', time());
 	}
+
 	if (isset($_POST['remove_hooks']))
 		remove_hooks();
 
 	$context['sub_template'] = 'admin';
 	$context['page_title'] = $txt['log_packages_title_' . (!empty($context['install']) ? 'installed' : 'removed')];
+
 	// Making a list is not hard with this beauty.
 	require_once($sourcedir . '/Subs-List.php');
 
@@ -185,9 +188,9 @@ function fixp_main ()
 					'value' => $txt['mod_' . (!empty($context['install']) ? 'installed' : 'removed')],
 				),
 				'data' => array(
-					'function' => create_function('&$data', '
-						return timeformat($data[\'time_' . (!empty($context['install']) ? 'installed' : 'removed') . '\']);
-					'),
+					'function' => function($data) {
+						return timeformat($data['time_' . (!empty($context['install']) ? 'installed' : 'removed')]);
+					},
 				),
 			),
 			'check' => array(
@@ -195,9 +198,9 @@ function fixp_main ()
 					'value' => '<input type="checkbox" onclick="invertAll(this, this.form);" class="input_check" />',
 				),
 				'data' => array(
-					'function' => create_function('$data', '
-						return \'<input type="checkbox" name="remove[]" value="\' . $data[\'id_install\'] . \'"  class="input_check" />\';
-					'),
+					'function' => function($data) {
+						return '<input type="checkbox" name="remove[]" value="' . $data['id_install'] . '"  class="input_check" />';
+					},
 					'class' => 'centertext',
 				),
 			),
@@ -224,7 +227,7 @@ function fixp_main ()
 	createList($listOptions);
 }
 
-function list_getPacks ()
+function list_getPacks(): array
 {
 	global $smcFunc, $context;
 
@@ -234,18 +237,17 @@ function list_getPacks ()
 		WHERE install_state = {int:inst_state}
 		ORDER BY id_install',
 		array(
-			'inst_state' => $context['install'],
+			'inst_state' => (int) $context['install'],
 	));
-	$installed = array();
+	$installed = [];
 	while ($row = $smcFunc['db_fetch_assoc']($request))
 		$installed[] = $row;
-
 	$smcFunc['db_free_result']($request);
 
 	return $installed;
 }
 
-function list_getNumPacks ()
+function list_getNumPacks(): int
 {
 	global $smcFunc, $context;
 
@@ -254,7 +256,7 @@ function list_getNumPacks ()
 		FROM {db_prefix}log_packages
 		WHERE install_state = {int:inst_state}',
 		array(
-			'inst_state' => $context['install'],
+			'inst_state' => (int) $context['install'],
 	));
 	list ($numPacks) = $smcFunc['db_fetch_row']($request);
 	$smcFunc['db_free_result']($request);
@@ -262,7 +264,7 @@ function list_getNumPacks ()
 	return $numPacks;
 }
 
-function remove_hooks()
+function remove_hooks(): void
 {
 	global $smcFunc;
 
