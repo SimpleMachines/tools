@@ -5,10 +5,10 @@
  *
  * @package SMF
  * @author Simple Machines
- * @copyright 2020 Simple Machines
+ * @copyright 2021 Simple Machines
  * @license https://www.simplemachines.org/about/smf/license.php BSD
  *
- * @version 2.0.17
+ * @version 2.1.1
  */
 
 // If SSI.php is in the same place as this file, and SMF isn't defined, this is being run standalone.
@@ -22,7 +22,7 @@ if (file_exists(dirname(__FILE__) . '/SSI.php') && !defined('SMF'))
 elseif(!defined('SMF'))
 	die('<b>Error:</b> Cannot start - please verify you put this in the same place as SMF\'s SSI.php.');
 
-$smfinfo_version = '1.2';
+$smfinfo_version = '1.2.1';
 
 initialize();
 
@@ -1307,9 +1307,9 @@ function show_status()
 
 function show_footer()
 {
-	global $context, $boardurl, $forum_copyright, $forum_version;
+	global $context, $boardurl, $forum_copyright, $forum_version, $scripturl;
 
-	$t = sprintf($forum_copyright, $forum_version);
+	$t = sprintf($forum_copyright, $forum_version, date('Y'), $scripturl);
 	echo '
 			</div><!-- #smfinfo -->
 		</div><!-- #wrapper -->
