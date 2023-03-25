@@ -37,12 +37,12 @@ class Populate
 {
 	private $blockSize = 500;
 	private $refreshRate = 0;
-	private $loremIpsum = null;
-	private $ounters = array();
+	private $loremIpsum;
+	private $counters = array();
 
 	private $timeStart = 0;
 
-	public function __construct ($options = array())
+	public function __construct($options = array())
 	{
 		global $smcFunc;
 
@@ -58,7 +58,7 @@ class Populate
 		$this->counters['topics']['current'] = 0;
 		$this->counters['messages']['max'] = 3000000;
 		$this->counters['messages']['current'] = 0;
-		$this->timeStart = microtime(TRUE);
+		$this->timeStart = microtime(true);
 
 		// Override defaults
 		foreach ($options as $_key => $_value)
@@ -66,7 +66,7 @@ class Populate
 
 		$this->loremIpsum = new LoremIpsumGenerator();
 
-		// Determine our 'currents'
+		$end = false;
 		foreach ($this->counters as $key => $val)
 		{
 			$request = $smcFunc['db_query']('', 'SELECT COUNT(*) FROM {db_prefix}' . $key);
@@ -74,8 +74,7 @@ class Populate
 			$smcFunc['db_free_result']($request);
 			if ($key != 'topics' && $this->counters[$key]['current'] < $this->counters[$key]['max'])
 			{
-				$func = 'make'.ucfirst($key);
-				$end = false;
+				$func = 'make' . ucfirst($key);
 				break;
 			}
 			else
@@ -87,7 +86,7 @@ class Populate
 		$this->complete($end);
 	}
 
-	private function makeCategories ()
+	private function makeCategories()
 	{
 		global $sourcedir;
 		require_once($sourcedir . '/Subs-Categories.php');
@@ -105,7 +104,7 @@ class Populate
 		$this->pause();
 	}
 
-	private function makeBoards ()
+	private function makeBoards()
 	{
 		global $sourcedir;
 		require_once($sourcedir . '/Subs-Boards.php');
@@ -121,7 +120,7 @@ class Populate
 			if (mt_rand() < (mt_getrandmax() / 2))
 			{
 				$boardOptions = array_merge($boardOptions, array(
-					'target_board' => mt_rand(1, $this->counters['boards']['current']-1),
+					'target_board' => mt_rand(1, $this->counters['boards']['current'] - 1),
 					'move_to' => 'child',
 				));
 			}
@@ -132,7 +131,7 @@ class Populate
 		$this->pause();
 	}
 
-	private function makeMembergroups ()
+	private function makeMembergroups()
 	{
 		global $smcFunc;
 
@@ -159,7 +158,7 @@ class Populate
 		$this->pause();
 	}
 
-	private function makeMembers ()
+	private function makeMembers()
 	{
 		global $sourcedir, $modSettings;
 		require_once($sourcedir . '/Subs-Members.php');
@@ -172,7 +171,7 @@ class Populate
 			$regOptions = array(
 				'interface' => 'admin',
 				'username' => 'Member ' . ++$this->counters['members']['current'],
-				'email' => 'member_' . $this->counters['members']['current'] . '@' . $_SERVER['SERVER_NAME'] . (strpos($_SERVER['SERVER_NAME'], '.') === FALSE ? '.com' : ''),
+				'email' => 'member_' . $this->counters['members']['current'] . '@' . $_SERVER['SERVER_NAME'] . (strpos($_SERVER['SERVER_NAME'], '.') === false ? '.com' : ''),
 				'password' => '',
 				'require' => 'nothing',
 				'send_welcome_email' => false,
@@ -187,7 +186,7 @@ class Populate
 		$this->pause();
 	}
 
-	private function makeMessages ()
+	private function makeMessages()
 	{
 		global $sourcedir;
 		require_once($sourcedir . '/Subs-Post.php');
@@ -195,9 +194,9 @@ class Populate
 		while ($this->counters['messages']['current'] < $this->counters['messages']['max'] && $this->blockSize--)
 		{
 			$msgOptions = array(
-				'subject' => trim($this->loremIpsum->getContent(mt_rand(1,6), 'txt')),
+				'subject' => trim($this->loremIpsum->getContent(mt_rand(1, 6), 'txt')),
 				'body' => trim($this->loremIpsum->getContent(mt_rand(5, 60), 'txt')),
-				'approved' => TRUE
+				'approved' => true
 			);
 
 			$makenew = ($this->counters['topics']['current'] < $this->counters['topics']['max']) && (mt_rand() < (int)(mt_getrandmax() * ($this->counters['topics']['max'] / $this->counters['messages']['max'])));
@@ -205,7 +204,7 @@ class Populate
 			$topicOptions = array(
 				'id' => $makenew ? 0 : mt_rand(1, $this->counters['topics']['current']),
 				'board' => mt_rand(1, $this->counters['boards']['max']),
-				'mark_as_read' => TRUE,
+				'mark_as_read' => true,
 			);
 
 			if ($makenew)
@@ -216,7 +215,7 @@ class Populate
 				'id' => $member,
 				'name' => 'Member ' . $member,
 				'email' => 'member_' . $member . '@' . $_SERVER['SERVER_NAME'] . '.com',
-				'update_post_count' => TRUE,
+				'update_post_count' => true,
 			);
 
 			createPost($msgOptions, $topicOptions, $posterOptions);
@@ -224,7 +223,7 @@ class Populate
 		$this->pause();
 	}
 
-	private function pause ($end = false)
+	private function pause($end = false)
 	{
 		if (!$end)
 		{
@@ -244,14 +243,14 @@ class Populate
 			echo '
 			' . $val['current'] . ' of ' . $val['max'] . ' ' . $key . ' created<br />';
 		echo '
-			Time taken for last request: ' . round(microtime(TRUE) - $this->timeStart, 3) . ' seconds';
+			Time taken for last request: ' . round(microtime(true) - $this->timeStart, 3) . ' seconds';
 
 		if ($end)
 			echo '<br /><br />
 			<b>Completed</b>';
 	}
 
-	private function fixupTopicsBoards ()
+	private function fixupTopicsBoards()
 	{
 		global $smcFunc, $sourcedir, $db_type;
 
@@ -277,7 +276,7 @@ class Populate
 		}
 	}
 
-	private function complete ($end)
+	private function complete($end)
 	{
 		if ($end)
 		{
@@ -287,41 +286,35 @@ class Populate
 	}
 }
 
-class LoremIpsumGenerator {
-	/**
-	*	Copyright (c) 2009, Mathew Tinsley (tinsley@tinsology.net)
-	*	All rights reserved.
-	*
-	*	Redistribution and use in source and binary forms, with or without
-	*	modification, are permitted provided that the following conditions are met:
-	*		* Redistributions of source code must retain the above copyright
-	*		  notice, this list of conditions and the following disclaimer.
-	*		* Redistributions in binary form must reproduce the above copyright
-	*		  notice, this list of conditions and the following disclaimer in the
-	*		  documentation and/or other materials provided with the distribution.
-	*		* Neither the name of the organization nor the
-	*		  names of its contributors may be used to endorse or promote products
-	*		  derived from this software without specific prior written permission.
-	*
-	*	THIS SOFTWARE IS PROVIDED BY MATHEW TINSLEY ''AS IS'' AND ANY
-	*	EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-	*	WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-	*	DISCLAIMED. IN NO EVENT SHALL <copyright holder> BE LIABLE FOR ANY
-	*	DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-	*	(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-	*	LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-	*	ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-	*	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-	*	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-	*/
-
-	private $words, $wordsPerParagraph, $wordsPerSentence;
-
-	function __construct ($wordsPer = 100)
-	{
-		$this->wordsPerParagraph = $wordsPer;
-		$this->wordsPerSentence = 24.460;
-		$this->words = array(
+/**
+ *    Copyright (c) 2009, Mathew Tinsley (tinsley@tinsology.net)
+ *    All rights reserved.
+ *
+ *    Redistribution and use in source and binary forms, with or without
+ *    modification, are permitted provided that the following conditions are met:
+ *        * Redistributions of source code must retain the above copyright
+ *          notice, this list of conditions and the following disclaimer.
+ *        * Redistributions in binary form must reproduce the above copyright
+ *          notice, this list of conditions and the following disclaimer in the
+ *          documentation and/or other materials provided with the distribution.
+ *        * Neither the name of the organization nor the
+ *          names of its contributors may be used to endorse or promote products
+ *          derived from this software without specific prior written permission.
+ *
+ *    THIS SOFTWARE IS PROVIDED BY MATHEW TINSLEY ''AS IS'' AND ANY
+ *    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ *    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *    DISCLAIMED. IN NO EVENT SHALL <copyright holder> BE LIABLE FOR ANY
+ *    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ *    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ *    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ *    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+class LoremIpsumGenerator
+{
+	private $words = array(
 		'lorem',
 		'ipsum',
 		'dolor',
@@ -499,10 +492,20 @@ class LoremIpsumGenerator {
 		'elementum',
 		'tempor',
 		'risus',
-		'cras' );
-	}
+		'cras'
+	);
 
-	function getContent ($count, $format = 'html', $loremipsum = true)
+	private $wordsPerParagraph = 100;
+
+	private $wordsPerSentence = 24.460;
+
+	/**
+	 * @param $count
+	 * @param string $format
+	 * @param bool $loremipsum
+	 * @return array|string
+	 */
+	function getContent($count, $format = 'html', $loremipsum = true)
 	{
 		$format = strtolower($format);
 
@@ -520,7 +523,7 @@ class LoremIpsumGenerator {
 		}
 	}
 
-	private function getWords (&$arr, $count, $loremipsum)
+	private function getWords(&$arr, $count, $loremipsum)
 	{
 		$i = 0;
 		if ($loremipsum)
@@ -543,7 +546,7 @@ class LoremIpsumGenerator {
 		}
 	}
 
-	private function getPlain ($count, $loremipsum, $returnStr = true)
+	private function getPlain($count, $loremipsum, $returnStr = true)
 	{
 		$words = array();
 		$this->getWords($words, $count, $loremipsum);
@@ -583,7 +586,7 @@ class LoremIpsumGenerator {
 			return $sentences;
 	}
 
-	private function getText ($count, $loremipsum)
+	private function getText($count, $loremipsum)
 	{
 		$sentences = $this->getPlain($count, $loremipsum, false);
 		$paragraphs = $this->getParagraphArr($sentences);
@@ -598,7 +601,7 @@ class LoremIpsumGenerator {
 		return implode("\n\n\t", $paragraphStr);
 	}
 
-	private function getParagraphArr ($sentences)
+	private function getParagraphArr($sentences)
 	{
 		$wordsPer = $this->wordsPerParagraph;
 		$sentenceAvg = $this->wordsPerSentence;
@@ -627,7 +630,7 @@ class LoremIpsumGenerator {
 		return $paragraphs;
 	}
 
-	private function getHTML ($count, $loremipsum)
+	private function getHTML($count, $loremipsum)
 	{
 		$sentences = $this->getPlain($count, $loremipsum, false);
 		$paragraphs = $this->getParagraphArr($sentences);
@@ -643,7 +646,7 @@ class LoremIpsumGenerator {
 		return implode("\n", $paragraphStr);
 	}
 
-	private function paragraphToString ($paragraph, $htmlCleanCode = false)
+	private function paragraphToString($paragraph, $htmlCleanCode = false)
 	{
 		$paragraphStr = '';
 		foreach ($paragraph as $sentence)
@@ -661,7 +664,7 @@ class LoremIpsumGenerator {
 	* Inserts commas and periods in the given
 	* word array.
 	*/
-	private function punctuate (& $sentence)
+	private function punctuate(& $sentence)
 	{
 		$count = count($sentence);
 		$sentence[$count - 1] = $sentence[$count - 1] . '.';
@@ -687,7 +690,7 @@ class LoremIpsumGenerator {
 	* sentence of the given length. Average and
 	* standard deviation are determined superficially
 	*/
-	private function numberOfCommas ($len)
+	private function numberOfCommas($len)
 	{
 		$avg = (float) log($len, 6);
 		$stdDev = (float) $avg / 6.000;
@@ -704,7 +707,7 @@ class LoremIpsumGenerator {
 	*	Average: 24.46
 	*	Standard Deviation: 5.08
 	*/
-	private function gaussianSentence ()
+	private function gaussianSentence()
 	{
 		$avg = (float) 24.460;
 		$stdDev = (float) 5.080;
@@ -718,32 +721,33 @@ class LoremIpsumGenerator {
 	* Source:
 	* 	http://us.php.net/manual/en/function.rand.php#53784
 	*/
-	private function gauss ()
-	{   // N(0,1)
+	private function gauss()
+	{
+// N(0,1)
 		// returns random number with normal distribution:
 		//   mean=0
 		//   std dev=1
 
 		// auxilary vars
-		$x=$this->random_0_1();
-		$y=$this->random_0_1();
+		$x = $this->random_0_1();
+		$y = $this->random_0_1();
 
 		// two independent variables with normal distribution N(0,1)
-		$u=sqrt(-2*log($x))*cos(2*pi()*$y);
-		$v=sqrt(-2*log($x))*sin(2*pi()*$y);
+		$u = sqrt(-2 * log($x)) * cos(2 * pi() * $y);
+		$v = sqrt(-2 * log($x)) * sin(2 * pi() * $y);
 
 		// i will return only one, couse only one needed
 		return $u;
 	}
 
-	private function gauss_ms ($m=0.0,$s=1.0)
+	private function gauss_ms($m = 0.0, $s = 1.0)
 	{
-		return $this->gauss()*$s+$m;
+		return $this->gauss() * $s + $m;
 	}
 
-	private function random_0_1 ()
+	private function random_0_1()
 	{
-		return (float)rand()/(float)getrandmax();
+		return (float) rand() / (float) getrandmax();
 	}
 
 }

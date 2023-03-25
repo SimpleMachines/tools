@@ -54,7 +54,7 @@ if (SMF == 'SSI')
 	obExit(null, null, true);
 }
 
-function create_mod ()
+function create_mod()
 {
 	global $context, $smcFunc, $boardurl, $create_path, $txt;
 
@@ -180,7 +180,7 @@ function create_mod ()
 		do_create();
 }
 
-function do_create ()
+function do_create()
 {
 	global $context, $create_path, $txt, $sourcedir, $boardurl;
 
@@ -213,7 +213,7 @@ function do_create ()
 	$context['download_url'] = $boardurl . '/patch_to_mod.php?download=' . $context['clean_name'];
 }
 
-function create_package ()
+function create_package()
 {
 	global $context, $txt;
 
@@ -241,7 +241,7 @@ function create_package ()
 	$zip->close();
 }
 
-function prepare_files ()
+function prepare_files()
 {
 	global $context, $sourcedir;
 
@@ -284,7 +284,7 @@ function prepare_files ()
 	return true;
 }
 
-function create_package_xml ()
+function create_package_xml()
 {
 	global $context;
 
@@ -333,7 +333,7 @@ function create_package_xml ()
 	file_put_contents($context['current_path'] . '/package-info.xml', $write);
 }
 
-function create_mod_xml ()
+function create_mod_xml()
 {
 	global $context;
 
@@ -403,7 +403,7 @@ function create_mod_xml ()
 		write_mod_xml();
 }
 
-function write_mod_xml ()
+function write_mod_xml()
 {
 	global $context;
 
@@ -438,12 +438,12 @@ function write_mod_xml ()
 	file_put_contents($context['current_path'] . '/modifications.xml', $write);
 }
 
-function string_starts_with ($string, $star)
+function string_starts_with($string, $star)
 {
 	return substr($string, 0, strlen($star)) == $star;
 }
 
-function create_menu_button (&$buttons)
+function create_menu_button(&$buttons)
 {
 	global $boardurl, $context, $txt;
 
@@ -460,7 +460,7 @@ function create_menu_button (&$buttons)
 	);
 }
 
-function template_create_script ()
+function template_create_script()
 {
 	global $boardurl, $context, $txt;
 

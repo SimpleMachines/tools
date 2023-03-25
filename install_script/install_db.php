@@ -38,10 +38,8 @@ $db_changes['db_add_column'][] = array (
 			array(),
 			'ignore'
 		);
-
  * Instead create a new table would look like:
 	@todo put here an example of a table
-
  */
 $db_changes = array(
 );
@@ -71,7 +69,7 @@ else
 	setup_dbchanges();
 }
 
-function install_db_mod ()
+function install_db_mod()
 {
 	global $context, $mod_name, $has_db_changes;
 
@@ -106,7 +104,7 @@ function install_db_mod ()
 		setup_dbchanges();
 }
 
-function setup_dbchanges ($uninstall = false, $apply = true)
+function setup_dbchanges($uninstall = false, $apply = true)
 {
 	global $db_changes, $smcFunc, $db_prefix;
 
@@ -185,10 +183,10 @@ function setup_dbchanges ($uninstall = false, $apply = true)
 				break;
 		}
 	}
-	return $db_columns_changes . (!empty($db_tables_changes) ? '<br />' . $db_tables_changes : '') . (!empty($db_non_tracked_changes) ? '<br /><br />Please note the following changes will not be reverted during the uninstall:<ul>'  . $db_non_tracked_changes . '</ul>' : '');
+	return $db_columns_changes . (!empty($db_tables_changes) ? '<br />' . $db_tables_changes : '') . (!empty($db_non_tracked_changes) ? '<br /><br />Please note the following changes will not be reverted during the uninstall:<ul>' . $db_non_tracked_changes . '</ul>' : '');
 }
 
-function install_menu_button (&$buttons)
+function install_menu_button(&$buttons)
 {
 	global $boardurl, $context;
 
@@ -205,7 +203,7 @@ function install_menu_button (&$buttons)
 	);
 }
 
-function template_install_script ()
+function template_install_script()
 {
 	global $boardurl, $context;
 

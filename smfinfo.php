@@ -19,7 +19,7 @@ if (file_exists(dirname(__FILE__) . '/SSI.php') && !defined('SMF'))
 	error_reporting($old_error_reporting);
 }
 // Hmm... no SSI.php and no SMF?
-elseif(!defined('SMF'))
+elseif (!defined('SMF'))
 	die('<b>Error:</b> Cannot start - please verify you put this in the same place as SMF\'s SSI.php.');
 
 $smfinfo_version = '1.2.1';
@@ -163,7 +163,7 @@ load_txt_strings();
 // The keys on these entries need to match
 // what is in the $txt keys/brackets above
 // Makes for easy adding of extra info, or deleting
-$context['smfinfo'] = array (
+$context['smfinfo'] = array(
 	'db_type' => !empty($db_type) ? $db_type : '<i>' . $txt['empty'] . '</i>',
 	'db_prefix' => !empty($db_prefix) ? $db_prefix : '<i>' . $txt['empty'] . '</i>',
 	'language' => !empty($language) ? $language : '<i>' . $txt['empty'] . '</i>',
@@ -183,7 +183,7 @@ $context['smfinfo'] = array (
 	'hostname_lookup' => get_smf_setting('disableHostnameLookup'),
 	'cache' => (!empty($modSettings['cache_enable']) ? $txt['cache_level'] . ' ' . $modSettings['cache_enable'] : $txt['off']) . ($modSettings['cache_enable'] != '1' ? '&nbsp;<strong>(' . $txt['recommended'] . ': ' . $txt['cache_level'] . ' 1)</strong>' : ''),
 	'memcached_settings' => isset($modSettings['cache_memcached']) && trim($modSettings['cache_memcached']) != '' ? trim($modSettings['cache_memcached']) : '<i>' . $txt['empty'] . '</i>',
-	'cookie_name' => !empty($cookiename) ? $cookiename : '<i>' . $txt['empty'] . '</i>&nbsp;<strong>(' . $txt['recommended'] . ': SMFCookie' . rand(100,999) . ')</strong>',
+	'cookie_name' => !empty($cookiename) ? $cookiename : '<i>' . $txt['empty'] . '</i>&nbsp;<strong>(' . $txt['recommended'] . ': SMFCookie' . rand(100, 999) . ')</strong>',
 	'local_cookies' => get_smf_setting('localCookies', 'off'),
 	'global_cookies' => get_smf_setting('globalCookies'),
 	'log_pruning' => get_smf_setting('pruningOptions', 'on'),
@@ -192,7 +192,7 @@ $context['smfinfo'] = array (
 	'previousCharacterSet' => get_smf_setting('previousCharacterSet'),
 );
 
-$context['phpinfo'] = array (
+$context['phpinfo'] = array(
 	'safe_mode' => get_php_setting('safe_mode', 'off'),
 	'open_base' => ($ob = ini_get('open_basedir')) ? $ob : $txt['none'],
 	'display_errors' => get_php_setting('display_errors', 'off'),
@@ -834,17 +834,17 @@ function show_detailed_db()
 								</tr>';
 
 		$table_color = 1;
-		foreach($context['database_tables'] as $table)
+		foreach ($context['database_tables'] as $table)
 		{
 			echo '
 								<tr class="row', $table_color = !$table_color, '">
 									<td>', !empty($table['columns']) ? '<a href="javascript:void(0);" onclick="return swapOption(this, \'' . $table['name'] . '\');">' : '', $table['name'], !empty($table['columns']) ? '</a>' : '', '</td>
-									<td>', isset($table['engine']) ?  $table['engine'] : $txt['na'], '</td>
-									<td>', isset($table['rows']) ?  $table['rows'] : $txt['na'], '</td>
-									<td>', isset($table['size']) ?  $table['size'] : $txt['na'], '</td>
-									<td>', isset($table['overhead']) ?  $table['overhead'] : $txt['na'], '</td>
-									<td>', isset($table['auto_increment']) ?  $table['auto_increment'] : $txt['na'], '</td>
-									<td>', isset($table['collation']) ?  $table['collation'] : $txt['na'], '</td>
+									<td>', isset($table['engine']) ? $table['engine'] : $txt['na'], '</td>
+									<td>', isset($table['rows']) ? $table['rows'] : $txt['na'], '</td>
+									<td>', isset($table['size']) ? $table['size'] : $txt['na'], '</td>
+									<td>', isset($table['overhead']) ? $table['overhead'] : $txt['na'], '</td>
+									<td>', isset($table['auto_increment']) ? $table['auto_increment'] : $txt['na'], '</td>
+									<td>', isset($table['collation']) ? $table['collation'] : $txt['na'], '</td>
 								</tr>';
 			if (!empty($table['columns']))
 			{
@@ -921,7 +921,7 @@ function show_mods()
 						<td width="150px"><strong>', $txt['package_version'], '</strong></td>
 					</tr>';
 
-	foreach(loadInstalledPackages() as $package)
+	foreach (loadInstalledPackages() as $package)
 	{
 		echo '
 					<tr>
@@ -1714,11 +1714,16 @@ function get_file_versions($core = false)
 
 function get_server_software()
 {
-	if (isset($_SERVER['SERVER_SOFTWARE'])) {
+	if (isset($_SERVER['SERVER_SOFTWARE']))
+	{
 		return $_SERVER['SERVER_SOFTWARE'];
-	} else if (($sf = getenv('SERVER_SOFTWARE'))) {
+	}
+	else if (($sf = getenv('SERVER_SOFTWARE')))
+	{
 		return $sf;
-	} else {
+	}
+	else
+	{
 		return 'n/a';
 	}
 }
@@ -1753,7 +1758,7 @@ function generate_password()
 	$i = 0;
 	while ($i < 12)
 	{
-		$password .= substr($possible, mt_rand(0, strlen($possible)-1), 1);
+		$password .= substr($possible, mt_rand(0, strlen($possible) - 1), 1);
 		$i++;
 	}
 
@@ -2561,7 +2566,7 @@ function get_error_log()
 	$smcFunc['db_free_result']($request);
 }
 
-function convert_memory($number, $bytes=true)
+function convert_memory($number, $bytes = true)
 {
   $bitsOrBytes = ($bytes) ? 'B' : 'b';
 
@@ -2574,9 +2579,9 @@ function convert_memory($number, $bytes=true)
   $thousandArray[5] = 'P';
 
   for ($i = 0; $number > 1024 && $i < count($thousandArray); $i++)
-    $number /= 1024;
+	$number /= 1024;
 
-  return number_format($number,2) . ' ' . $thousandArray[$i] . $bitsOrBytes;
+  return number_format($number, 2) . ' ' . $thousandArray[$i] . $bitsOrBytes;
 }
 
 ?>

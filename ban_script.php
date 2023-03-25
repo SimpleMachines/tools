@@ -30,7 +30,7 @@ else
  * and tranlsate it. ;D
  * 
  */
-function bans_english ()
+function bans_english()
 {
 	global $txt;
 
@@ -68,7 +68,7 @@ bans_main();
 // and then let's throw out the template! :P
 obExit(null, null, true);
 
-function bans_menu_button (&$buttons)
+function bans_menu_button(&$buttons)
 {
 	global $boardurl, $txt, $context;
 	bans_loadLanguage();
@@ -85,7 +85,7 @@ function bans_menu_button (&$buttons)
 	);
 }
 
-function bans_loadLanguage ()
+function bans_loadLanguage()
 {
 	global $user_info;
 
@@ -95,7 +95,7 @@ function bans_loadLanguage ()
 		return $flang();
 }
 
-function bans_main ()
+function bans_main()
 {
 	global $txt, $sourcedir, $boardurl, $context, $forum_version, $user_info, $smcFunc;
 
@@ -228,7 +228,7 @@ function bans_main ()
 	}
 }
 
-function bans_getBanNames ()
+function bans_getBanNames()
 {
 	global $smcFunc;
 
@@ -246,7 +246,7 @@ function bans_getBanNames ()
 	return $banNames;
 }
 
-function list_getToBeBans ($start, $items_per_page, $sort)
+function list_getToBeBans($start, $items_per_page, $sort)
 {
 	global $smcFunc, $context, $user_info;
 
@@ -265,7 +265,7 @@ function list_getToBeBans ($start, $items_per_page, $sort)
 		list ($lastRead) = $smcFunc['db_fetch_row']($request);
 		$smcFunc['db_free_result']($request);
 
-		if(empty($lastRead))
+		if (empty($lastRead))
 			$lastRead = 0;
 	}
 	else
@@ -296,7 +296,7 @@ function list_getToBeBans ($start, $items_per_page, $sort)
 	return $suggested;
 }
 
-function list_getNumToBeBans ()
+function list_getNumToBeBans()
 {
 	global $smcFunc, $context, $user_info;
 
@@ -315,7 +315,7 @@ function list_getNumToBeBans ()
 		list ($lastRead) = $smcFunc['db_fetch_row']($request);
 		$smcFunc['db_free_result']($request);
 
-		if(empty($lastRead))
+		if (empty($lastRead))
 			$lastRead = 0;
 	}
 	else
@@ -340,7 +340,7 @@ function list_getNumToBeBans ()
 	return $numPacks;
 }
 
-function template_ban_script ()
+function template_ban_script()
 {
 	global $context, $txt, $boardurl;
 
@@ -373,7 +373,7 @@ function template_ban_script ()
 		echo '
 				<dl class="settings">
 					<dt><label style="vertical-align:top" for="to_bans">' . $txt['to_bans'] . '</label></dt>
-					<dd><textarea id="to_bans" name="to_bans" rows="5" cols="60">', !empty($context['to_bans']) ? implode(',', $context['to_bans']) : ''  , '</textarea></dd>
+					<dd><textarea id="to_bans" name="to_bans" rows="5" cols="60">', !empty($context['to_bans']) ? implode(',', $context['to_bans']) : '', '</textarea></dd>
 					<dt><label for="ban_name">' . $txt['ban_name'] . '</label></dt>
 					<dd>
 						<select onchange="return showHide(\'ban_name_new\', this.selectedIndex, \'ban_name\');" id="ban_name" name="ban_name">';
@@ -381,9 +381,9 @@ function template_ban_script ()
 		if (!empty($context['ban_names']))
 			foreach ($context['ban_names'] as $id => $name)
 				echo '
-							<option value="' . $name . '"' . (!empty($_POST['ban_name']) && $name == $_POST['ban_name'] ? ' selected="selected"': '') . '>' . $name . '</option>';
+							<option value="' . $name . '"' . (!empty($_POST['ban_name']) && $name == $_POST['ban_name'] ? ' selected="selected"' : '') . '>' . $name . '</option>';
 		echo '
-							<option value=""' . (empty($context['ban_names']) ? ' selected="selected"': '') . '/>
+							<option value=""' . (empty($context['ban_names']) ? ' selected="selected"' : '') . '/>
 						</select>
 						<input id="ban_name_new"' . (empty($context['ban_names']) && !empty($_POST['ban_name']) ? ' value="' . $_POST['ban_name'] . '" ' : '') . ' type="text" size="15" maxlength="20" name="ban_name_new" class="input_text"/>
 					<script type="text/javascript"><!-- // --><![CDATA[' . (!empty($context['ban_names']) ? '
@@ -436,7 +436,7 @@ function template_ban_script ()
 
 
 
-function banScript ()
+function banScript()
 {
 	global $modSettings, $smcFunc, $txt, $sourcedir, $user_info, $context;
 
@@ -488,14 +488,14 @@ function banScript ()
 			break;
 	}
 
-	if(empty($ban_name))
+	if (empty($ban_name))
 		$context['errors'][] = $txt['reportedBan_error_name'];
-	if(empty($ban_reason))
+	if (empty($ban_reason))
 		$context['errors'][] = $txt['reportedBan_error_reason'];
-	if(empty($_POST['to_bans']))
+	if (empty($_POST['to_bans']))
 		$context['errors'][] = $txt['no_member_selected'];
 
-	if(!empty($context['errors']))
+	if (!empty($context['errors']))
 		return;
 
 	$context['to_bans'] = explode(',', $_POST['to_bans']);
@@ -541,7 +541,7 @@ function banScript ()
 		array(
 			'ban_name' => $ban_name,
 	));
-	if($smcFunc['db_num_rows']($id_ban)!=0)
+	if ($smcFunc['db_num_rows']($id_ban) != 0)
 		list($ban_group_id) = $smcFunc['db_fetch_row']($id_ban);
 	else
 		$ban_group_id = null;
@@ -560,10 +560,11 @@ function banScript ()
 	if (empty($members))
 		return;
 
-	if(!empty($mactions))
+	if (!empty($mactions))
 		foreach ($mactions as $maction)
 		{
-			switch ($maction) {
+			switch ($maction)
+			{
 				case 'ban_names':
 					$what = 'member_name';
 					$post_ban = 'user';
@@ -638,7 +639,8 @@ function banScript ()
 				$_REQUEST['u'] = $row['id_member'];
 
 				bans_BanEdit();
-				if(empty($ban_group_id)){
+				if (empty($ban_group_id))
+				{
 					$id_ban = $smcFunc['db_query']('', '
 						SELECT id_ban_group
 						FROM {db_prefix}ban_groups
@@ -648,7 +650,7 @@ function banScript ()
 							'ban_name' => $ban_name
 						)
 					);
-					if($smcFunc['db_num_rows']($id_ban)!=0)
+					if ($smcFunc['db_num_rows']($id_ban) != 0)
 						list($ban_group_id) = $smcFunc['db_fetch_row']($id_ban);
 					else
 						$ban_group_id = null;
