@@ -55,7 +55,7 @@ else
 	setup_hooks();
 }
 
-function install_mod ()
+function install_mod()
 {
 	global $context, $mod_name, $has_db_changes;
 
@@ -101,7 +101,7 @@ function install_mod ()
 	}
 }
 
-function setup_hooks ()
+function setup_hooks()
 {
 	global $context, $hooks;
 
@@ -112,7 +112,7 @@ function setup_hooks ()
 	$context['installation_done'] = true;
 }
 
-function install_menu_button (&$buttons)
+function install_menu_button(&$buttons)
 {
 	global $boardurl, $context;
 
@@ -129,7 +129,7 @@ function install_menu_button (&$buttons)
 	);
 }
 
-function template_install_script ()
+function template_install_script()
 {
 	global $boardurl, $context, $txt;
 
@@ -183,7 +183,7 @@ function template_install_script ()
 	</div>';
 }
 
-function doDelete ()
+function doDelete()
 {
 	@unlink(__FILE__);
 	@unlink(dirname(__FILE__) . '/install_db.php');

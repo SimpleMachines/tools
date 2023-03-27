@@ -135,8 +135,7 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www
 <html xmlns="http://www.w3.org/1999/xhtml">
 	<head>
 		<meta name="robots" content="noindex" />
-		<title>', isset($context['smfVersion']) ? sprintf($txt['smf_repair_settings'], $context['smfVersion']) :
-$txt['smf11_repair_settings'], '</title>
+		<title>', isset($context['smfVersion']) ? sprintf($txt['smf_repair_settings'], $context['smfVersion']) : $txt['smf11_repair_settings'], '</title>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 		<script type="text/javascript" src="Themes/default/scripts/script.js"></script>
 		<style type="text/css">
@@ -245,8 +244,7 @@ $txt['smf11_repair_settings'], '</title>
 	<body>
 		<div id="header">
 			<a href="http://www.simplemachines.org/" target="_blank"><img src="' . $smflogo . '" style="width: 250px; float: right;" alt="Simple Machines" border="0" /></a>
-			<div>', isset($context['smfVersion']) ? sprintf($txt['smf_repair_settings'], $context['smfVersion']) :
-$txt['smf11_repair_settings'], '</div>
+			<div>', isset($context['smfVersion']) ? sprintf($txt['smf_repair_settings'], $context['smfVersion']) : $txt['smf11_repair_settings'], '</div>
 		</div>
 		<div id="content">';
 
@@ -262,7 +260,7 @@ function initialize_inputs()
 	global $smcFunc, $db_connection, $sourcedir, $db_server, $db_name, $db_user, $db_passwd, $db_prefix, $db_type, $context, $sources_exist, $sources_found_path, $db_type_options;
 
 	// Turn off magic quotes runtime and enable error reporting.
-	if (function_exists('set_magic_quotes_runtime') && strnatcmp(phpversion(),'5.3.0') < 0)
+	if (function_exists('set_magic_quotes_runtime') && strnatcmp(phpversion(), '5.3.0') < 0)
 		@set_magic_quotes_runtime(0);
 	error_reporting(E_ALL);
 	if (ini_get('session.save_handler') == 'user')
@@ -383,8 +381,8 @@ function initialize_inputs()
 					$db_connection = null;
 				else
 				{
-					$tables=$smcFunc['db_list_tables']($db_name);
-					if (!(is_array($tables) && in_array($db_prefix . 'settings' , $tables)))
+					$tables = $smcFunc['db_list_tables']($db_name);
+					if (!(is_array($tables) && in_array($db_prefix . 'settings', $tables)))
 						$db_connection = null;
 				}
 			}
@@ -624,15 +622,15 @@ function show_settings()
 		// Create the values for the themes.
 		foreach ($theme_settings as $id => $theme)
 		{
-			$this_theme = ($pos = strpos($theme['theme_url'], '/Themes/')) !== false ? substr($theme['theme_url'], $pos+8) : '';
+			$this_theme = ($pos = strpos($theme['theme_url'], '/Themes/')) !== false ? substr($theme['theme_url'], $pos + 8) : '';
 			if (!empty($this_theme))
 				$exist = file_exists(dirname(__FILE__) . '/Themes/' . $this_theme);
 			else
 				$exist = false;
 
 			$known_settings['theme_path_url_settings'] += array(
-				'theme_'. $id.'_theme_url'=>array('theme', 'string', $exist && !empty($this_theme) ? $url . '/Themes/' . $this_theme : null),
-				'theme_'. $id.'_images_url'=>array('theme', 'string', $exist && !empty($this_theme) ? $url . '/Themes/' . $this_theme . '/images' : null),
+				'theme_' . $id . '_theme_url'=>array('theme', 'string', $exist && !empty($this_theme) ? $url . '/Themes/' . $this_theme : null),
+				'theme_' . $id . '_images_url'=>array('theme', 'string', $exist && !empty($this_theme) ? $url . '/Themes/' . $this_theme . '/images' : null),
 				'theme_' . $id . '_theme_dir' => array('theme', 'string', $exist && !empty($this_theme) ? realpath(dirname(__FILE__) . '/Themes/' . $this_theme) : null),
 			);
 			$settings += array(
@@ -749,8 +747,8 @@ function show_settings()
 
 			echo '
 							<td width="20%" valign="top" class="textbox" style="padding-bottom: 1ex;">
-								<label', $info[1] != 'int' ? ' for="' . $setting . '"' : '', '>', $txt[$setting], ': '.
-									( isset($txt[$setting . '_desc']) ? '<span class="smalltext">' . $txt[$setting . '_desc'] . '</span>' : '' ).'
+								<label', $info[1] != 'int' ? ' for="' . $setting . '"' : '', '>', $txt[$setting], ': ' .
+									(isset($txt[$setting . '_desc']) ? '<span class="smalltext">' . $txt[$setting . '_desc'] . '</span>' : '') . '
 								</label>', !isset($settings[$setting]) && $info[1] != 'check' ? '<br />
 								' . $txt['no_value'] : '', '
 							</td>
@@ -927,7 +925,7 @@ function guess_attachments_directories($id, $array_setting)
 	{
 		$availableDirs = array();
 		while (false !== ($file = readdir($basedir)))
-			if ($file != '.' && $file != '..' && is_dir($file) && $file != 'Sources'  && $file != 'Packages' && $file != 'Themes' && $file != 'cache' && $file != 'avatars' && $file != 'Smileys')
+			if ($file != '.' && $file != '..' && is_dir($file) && $file != 'Sources' && $file != 'Packages' && $file != 'Themes' && $file != 'cache' && $file != 'avatars' && $file != 'Smileys')
 				$availableDirs[] = $file;
 	}
 
@@ -1500,7 +1498,7 @@ function smc_compat_initiate($db_server, $db_name, $db_user, $db_passwd, $db_pre
 
 	// One last check - prefix
 	$tables = smf_db_list_tables();
-	if (!(is_array($tables) && in_array($db_prefix . 'settings' , $tables)))
+	if (!(is_array($tables) && in_array($db_prefix . 'settings', $tables)))
 		$db_connection = null;
 
 	$db_prefix = is_numeric(substr($db_prefix, 0, 1)) ? $db_name . '.' . $db_prefix : '`' . $db_name . '`.' . $db_prefix;
