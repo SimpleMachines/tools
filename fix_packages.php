@@ -144,13 +144,13 @@ class FixXP
 			'id' => 'log_packages',
 			'title' => $context['page_title'],
 			'get_items' => [
-				'function' => 'FixXP::list_getPacks',
+				'function' => [$this, 'list_getPacks'],
 				'params' => [
 					$this->isInstalling
 				],
 			],
 			'get_count' => [
-				'function' => 'FixXP::list_getNumPacks',
+				'function' => [$this, 'list_getNumPacks'],
 				'params' => [
 					$this->isInstalling
 				],
@@ -212,7 +212,7 @@ class FixXP
 		];
 	}
 
-	public static function list_getPacks(bool $isInstalling): array
+	public function list_getPacks(int $start, int $items_per_page, string $sort, bool $isInstalling): array
 	{
 		global $smcFunc;
 
@@ -233,7 +233,7 @@ class FixXP
 		return $installed;
 	}
 
-	public static function list_getNumPacks(bool $isInstalling): int
+	public function list_getNumPacks(bool $isInstalling): int
 	{
 		global $smcFunc;
 
