@@ -77,7 +77,7 @@ function get_linux_data()
 {
 	global $context;
 
-	$context['current_time'] = strftime('%B %d, %Y, %I:%M:%S %p');
+	$context['current_time'] = date('F j, Y, h:i:s A');
 
 	$context['load_averages'] = @implode('', @get_file_data('/proc/loadavg'));
 	if (!empty($context['load_averages']) && preg_match('~^([^ ]+?) ([^ ]+?) ([^ ]+)~', $context['load_averages'], $matches) != 0)
@@ -864,7 +864,7 @@ function generate_status()
 
 		$temp = array();
 		foreach ($context['top_cpu_usage'] as $proc)
-			$temp[$proc['percent']] = htmlspecialchars($proc['name']) . ' <em>(' . $proc['number'] . ')</em> ' . number_format($proc['percent'], 1) . '%';
+			$temp[] = htmlspecialchars($proc['name']) . ' <em>(' . $proc['number'] . ')</em> ' . number_format($proc['percent'], 1) . '%';
 
 		krsort($temp);
 		echo implode(', ', $temp);
