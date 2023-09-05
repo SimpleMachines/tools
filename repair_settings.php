@@ -9,7 +9,7 @@
  * @license https://www.simplemachines.org/about/smf/license.php BSD
  *
  * @version 2.1.4
- * @updated 2023-03-26
+ * @updated 2023-09-05
  */
 
 // We need the Settings.php info for database stuff.

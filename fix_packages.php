@@ -5,10 +5,10 @@
  *
  * @package fixp
  * @author emanuele
- * @copyright 2022 emanuele, Simple Machines
+ * @copyright 2023 emanuele, Simple Machines
  * @license https://www.simplemachines.org/about/smf/license.php BSD
  *
- * @version 1.0
+ * @version 2.1.4
  */
 
 // Let's use the default theme
