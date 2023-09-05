@@ -11,9 +11,6 @@
  * @version 2.1.4
  */
 
-// A nice menu button
-define('SMF_INTEGRATION_SETTINGS', serialize(array(
-	'integrate_menu_buttons' => 'fixp_menu_button',)));
 // Let's use the default theme
 $ssi_theme = 1;
 $forum_version = 'Fix Packages 0.1';
@@ -31,7 +28,6 @@ else
  */
 $context['override_security'] = false;
 
-
 /**
  * 
  * Do you want to add a new language?
@@ -40,80 +36,230 @@ $context['override_security'] = false;
  * and tranlsate it. ;D
  * 
  */
-function fixp_english ()
+class FixXP_Langauge
 {
-	global $txt;
+	private $txt;
+	
+	public function __construct()
+	{
+		global $user_info;
 
-	$txt['fixp'] = 'Fix Pack';
-	$txt['log_packages_title_installed'] = 'Installed packages';
-	$txt['log_packages_title_removed'] = 'Uninstalled packages';
-	$txt['pack_button_remove'] = 'Mark uninstalled selected';
-	$txt['pack_button_install'] = 'Mark installed selected';
-	$txt['remove_hooks'] = 'Remove all hooks';
-	$txt['uninstall'] = 'Show uninstalled';
-	$txt['install'] = 'Show installed';
-	$txt['mod_installed'] = 'Install date';
-	$txt['mod_removed'] = 'Uninstall date';
+		// Load the english language always.
+		$this->english();
+
+		// Load the users if we have it.
+		$flang = !empty($user_info['language']) ? $user_info['language'] : '';
+		if (method_exists($this, $flang) && $flang != 'english')
+			$this->$flang();
+	}
+	
+	public function lang(string $s): string
+	{
+		global $txt;
+
+		return isset($this->txt[$s]) ? $this->txt[$s] : (isset($txt[$s]) ? $txt[$s] : '');
+	}
+
+	// These are the language strings.
+	public function english(): void
+	{
+		$this->txt['fixp'] = 'Fix Pack';
+		$this->txt['log_packages_title_installed'] = 'Installed packages';
+		$this->txt['log_packages_title_removed'] = 'Uninstalled packages';
+		$this->txt['pack_button_remove'] = 'Mark uninstalled selected';
+		$this->txt['pack_button_install'] = 'Mark installed selected';
+		$this->txt['remove_hooks'] = 'Remove all hooks';
+		$this->txt['uninstall'] = 'Show uninstalled';
+		$this->txt['install'] = 'Show installed';
+		$this->txt['mod_installed'] = 'Install date';
+		$this->txt['mod_removed'] = 'Uninstall date';
+	}
 }
 
+$context['fixp_lang'] = new FixXP_Langauge();
 
-// Do not change anything below this line
-// ------------------------------------------------------------------------------------------------
+// Run it.
+new FixXP($context['override_security']);
 
-// Let's start the main job
-fixp_main();
 // and then let's throw out the template! :P
 obExit(null, null, true);
 
-function fixp_menu_button (&$buttons)
+class FixXP
 {
-	global $boardurl, $txt, $context;
-	fixp_loadLanguage();
-	$context['current_action'] = 'fixp';
+	private $lang;
+	private bool $isInstalling;
 
-	$buttons['fixp'] = array(
-		'title' => $txt['fixp'],
-		'show' => allowedTo('admin_forum'),
-		'href' => $boardurl . '/fix_packages.php',
-		'active_button' => true,
-		'sub_buttons' => array(
-		),
-	);
-}
-
-function fixp_loadLanguage ()
-{
-	global $user_info;
-
-	fixp_english();
-	$flang = 'fixp_' . (!empty($user_info['language']) ? $user_info['language'] : '');
-	if (function_exists($flang) && $flang != 'fixp_english')
-		return $flang();
-}
-
-function fixp_main ()
-{
-	global $txt, $sourcedir, $boarddir, $boardurl, $context, $user_info, $smcFunc;
-
-	loadLanguage('Admin');
-	loadLanguage('Packages');
-	loadTemplate('Admin');
-	fixp_loadLanguage();
-
-	// Sorry, only logged in admins...unless you want so.
-	if(empty($context['override_security']))
-		isAllowedTo('admin_forum');
-
-	$context['install'] = isset($_GET['uninstall']) ? 0 : 1;
-
-	if (!empty($_POST['remove']) && is_array($_POST['remove']))
+	public function __construct(bool $overrideSecure = false)
 	{
+		global $context;
+
+		// Sorry, only logged in admins...unless you want so.
+		if(empty($context['override_security']))
+			isAllowedTo('admin_forum');
+
+		$this->setupSystem();
+
+		if (!empty($_POST['remove']) && is_array($_POST['remove']))
+			$this->removeCustomizations();
+		if (isset($_POST['remove_hooks']))
+			$this->removeHooks();
+
+		// Use the standard templates for showing this.
+		$listOptions = $this->buildListOptions();
+
+		$context['sub_template'] = 'show_list';
+		$context['default_list'] = 'log_packages';
+
+		// Create the request list.
+		createList($listOptions);
+	}
+
+	public function setupSystem(): void
+	{
+		global $sourcedir, $modSettings, $user_info;
+
+		loadLanguage('Admin');
+		loadLanguage('Packages');
+		loadTemplate('Admin');
+		$this->lang = !empty($context['fixp_lang']) ? $context['fixp_lang'] : new FixXP_Langauge();
+
+		$this->isInstalling = isset($_GET['uninstall']) ? 0 : 1;
+
+		require_once($sourcedir . '/Subs-List.php');
+
+		$context['sub_template'] = 'admin';
+		$context['page_title'] = $this->lang('log_packages_title_' . (!empty($this->isInstalling) ? 'installed' : 'removed'));
+
+		// A nice menu button
+		cache_put_data('menu_buttons-' . implode('_', $user_info['groups']) . '-' . $user_info['language'], null);
+		add_integration_function('integrate_menu_buttons', 'FixXP::menuButton', false);
+		setupThemeContext(true);
+	}
+
+	private function buildListOptions(): array
+	{
+		global $boardurl, $context;
+
+		return [
+			'id' => 'log_packages',
+			'title' => $context['page_title'],
+			'get_items' => [
+				'function' => [$this, 'list_getPacks'],
+				'params' => [
+					$this->isInstalling
+				],
+			],
+			'get_count' => [
+				'function' => [$this, 'list_getNumPacks'],
+				'params' => [
+					$this->isInstalling
+				],
+			],
+			'columns' => [
+				'name' => [
+					'header' => [
+						'value' => $this->lang('mod_name'),
+					],
+					'data' => [
+						'db' => 'name',
+					],
+				],
+				'version' => [
+					'header' => [
+						'value' => $this->lang('mod_version'),
+					],
+					'data' => [
+						'db' => 'version',
+					],
+				],
+				'install_date' => [
+					'header' => [
+						'value' => $this->lang('mod_' . (!empty($this->isInstalling) ? 'installed' : 'removed')),
+					],
+					'data' => [
+						'function' => function($data)
+						{
+							return timeformat($data['time_' . (!empty($this->isInstalling) ? 'installed' : 'removed')]);
+						},
+					],
+				],
+				'check' => [
+					'header' => [
+						'value' => '<input type="checkbox" onclick="invertAll(this, this.form);" class="input_check" />',
+					],
+					'data' => [
+						'function' => function($data)
+						{
+							return '<input type="checkbox" name="remove[]" value="' . $data['id_install'] . '"  class="input_check" />';
+						},
+						'class' => 'centertext',
+					],
+				],
+			],
+			'form' => [
+				'href' => $boardurl . '/fix_packages.php?' . $context['session_var'] . '=' . $context['session_id'] . (!empty($this->isInstalling) ? '' : ';uninstall'),
+			],
+			'additional_rows' => [
+				[
+					'position' => 'below_table_data',
+					'value' => '
+						<a href="' . $boardurl . '/fix_packages.php' . (!empty($this->isInstalling) ? '?uninstall' : '') . '">[ ' . (!empty($this->isInstalling) ? $this->lang('uninstall') : $this->lang('install')) . ' ]</a>
+						<input type="submit" name="remove_packages" value="' . $this->lang('pack_button_' . (!empty($this->isInstalling) ? 'remove' : 'install')) . '" class="button_submit" />
+						<input type="submit" name="remove_hooks" value="' . $this->lang('remove_hooks') . '" class="button_submit" />',
+					'class' => 'righttext',
+				]
+			],
+		];
+	}
+
+	public function list_getPacks(int $start, int $items_per_page, string $sort, bool $isInstalling): array
+	{
+		global $smcFunc;
+
+		$request = $smcFunc['db_query']('', '
+			SELECT id_install, name, version, time_installed, time_removed
+			FROM {db_prefix}log_packages
+			WHERE install_state = {int:inst_state}
+			ORDER BY id_install',
+			[
+				'inst_state' => $isInstalling ? 1 : 0,
+		]);
+
+		$installed = [];
+		while ($row = $smcFunc['db_fetch_assoc']($request))
+			$installed[] = $row;
+		$smcFunc['db_free_result']($request);
+
+		return $installed;
+	}
+
+	public function list_getNumPacks(bool $isInstalling): int
+	{
+		global $smcFunc;
+
+		$request = $smcFunc['db_query']('', '
+			SELECT COUNT(*)
+			FROM {db_prefix}log_packages
+			WHERE install_state = {int:inst_state}',
+			[
+				'inst_state' => $isInstalling ? 1 : 0,
+		]);
+		list ($numPacks) = $smcFunc['db_fetch_row']($request);
+		$smcFunc['db_free_result']($request);
+
+		return !is_numeric($numPacks) ? 0 : $numPacks;
+	}
+
+	private function removeCustomizations(): void
+	{
+		global $sourcedir, $boarddir, $smcFunc, $context;
+
 		checkSession();
 
 		foreach ($_POST['remove'] as $id)
 			if (isset($id) && is_numeric($id))
 			{
-				if (!empty($context['install']))
+				if (!empty($this->isInstalling))
 					$smcFunc['db_query']('', '
 						UPDATE {db_prefix}log_packages
 						SET
@@ -123,8 +269,8 @@ function fixp_main ()
 							install_state = 0
 						WHERE id_install = {int:inst_package_id}',
 						array(
-							'id_member' => $user_info['id'],
-							'member_name' => $user_info['name'],
+							'id_member' => $context['user']['id'],
+							'member_name' => $context['user']['name'],
 							'time_removed' => time(),
 							'inst_package_id' => $id,
 					));
@@ -145,135 +291,41 @@ function fixp_main ()
 		require_once($sourcedir . '/Subs-Package.php');
 		package_put_contents($boarddir . '/Packages/installed.list', time());
 	}
-	if (isset($_POST['remove_hooks']))
-		remove_hooks();
 
-	$context['sub_template'] = 'admin';
-	$context['page_title'] = $txt['log_packages_title_' . (!empty($context['install']) ? 'installed' : 'removed')];
-	// Making a list is not hard with this beauty.
-	require_once($sourcedir . '/Subs-List.php');
+	private function removeHooks(): void
+	{
+		global $smcFunc;
 
-	// Use the standard templates for showing this.
-	$listOptions = array(
-		'id' => 'log_packages',
-		'title' => $context['page_title'],
-		'get_items' => array(
-			'function' => 'list_getPacks',
-		),
-		'get_count' => array(
-			'function' => 'list_getNumPacks',
-		),
-		'columns' => array(
-			'name' => array(
-				'header' => array(
-					'value' => $txt['mod_name'],
-				),
-				'data' => array(
-					'db' => 'name',
-				),
-			),
-			'version' => array(
-				'header' => array(
-					'value' => $txt['mod_version'],
-				),
-				'data' => array(
-					'db' => 'version',
-				),
-			),
-			'install_date' => array(
-				'header' => array(
-					'value' => $txt['mod_' . (!empty($context['install']) ? 'installed' : 'removed')],
-				),
-				'data' => array(
-					'function' => create_function('&$data', '
-						return timeformat($data[\'time_' . (!empty($context['install']) ? 'installed' : 'removed') . '\']);
-					'),
-				),
-			),
-			'check' => array(
-				'header' => array(
-					'value' => '<input type="checkbox" onclick="invertAll(this, this.form);" class="input_check" />',
-				),
-				'data' => array(
-					'function' => create_function('$data', '
-						return \'<input type="checkbox" name="remove[]" value="\' . $data[\'id_install\'] . \'"  class="input_check" />\';
-					'),
-					'class' => 'centertext',
-				),
-			),
-		),
-		'form' => array(
-			'href' => $boardurl . '/fix_packages.php?' . $context['session_var'] . '=' . $context['session_id'] . (!empty($context['install']) ? '' : ';uninstall'),
-		),
-		'additional_rows' => array(
+		$smcFunc['db_query']('', '
+			DELETE FROM {db_prefix}settings
+			WHERE variable LIKE {string:variable}',
 			array(
-				'position' => 'below_table_data',
-				'value' => '
-				<a href="' . $boardurl . '/fix_packages.php' . (!empty($context['install']) ? '?uninstall' : '') . '">[ ' . (!empty($context['install']) ? $txt['uninstall'] : $txt['install']) . ' ]</a>
-				<input type="submit" name="remove_packages" value="' . $txt['pack_button_' . (!empty($context['install']) ? 'remove' : 'install')] . '" class="button_submit" />
-				<input type="submit" name="remove_hooks" value="' . $txt['remove_hooks'] . '" class="button_submit" />',
-				'class' => 'righttext',
-			),
-		),
-	);
+				'variable' => 'integrate_%'
+			)
+		);
 
-	$context['sub_template'] = 'show_list';
-	$context['default_list'] = 'log_packages';
+		// Now fixing the cache...
+		cache_put_data('modsettings', null, 0);
+	}
 
-	// Create the request list.
-	createList($listOptions);
-}
+	// Menu buttons.
+	public static function menuButton(array &$buttons): void
+	{
+		global $boardurl, $txt, $context;
 
-function list_getPacks ()
-{
-	global $smcFunc, $context;
+		$context['current_action'] = 'fixp';
 
-	$request = $smcFunc['db_query']('', '
-		SELECT id_install, name, version, time_installed, time_removed
-		FROM {db_prefix}log_packages
-		WHERE install_state = {int:inst_state}
-		ORDER BY id_install',
-		array(
-			'inst_state' => $context['install'],
-	));
-	$installed = array();
-	while ($row = $smcFunc['db_fetch_assoc']($request))
-		$installed[] = $row;
-
-	$smcFunc['db_free_result']($request);
-
-	return $installed;
-}
-
-function list_getNumPacks ()
-{
-	global $smcFunc, $context;
-
-	$request = $smcFunc['db_query']('', '
-		SELECT COUNT(*)
-		FROM {db_prefix}log_packages
-		WHERE install_state = {int:inst_state}',
-		array(
-			'inst_state' => $context['install'],
-	));
-	list ($numPacks) = $smcFunc['db_fetch_row']($request);
-	$smcFunc['db_free_result']($request);
-
-	return $numPacks;
-}
-
-function remove_hooks()
-{
-	global $smcFunc;
-
-	$smcFunc['db_query']('', '
-		DELETE FROM {db_prefix}settings
-		WHERE variable LIKE {string:variable}',
-		array(
-			'variable' => 'integrate_%'
-		)
-	);
-
-	// Now fixing the cache...
-	cache_put_data('modsettings', null, 0);
+		$buttons['fixp'] = [
+			'title' => $context['fixp_lang']->lang('fixp'),
+			'show' => allowedTo('admin_forum'),
+			'href' => $boardurl . '/fix_packages.php',
+			'active_button' => true,
+			'sub_buttons' => []
+		];
+	}
+	
+	private function lang(string $s): string
+	{
+		return $this->lang->lang($s);
+	}
 }

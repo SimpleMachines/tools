@@ -995,23 +995,22 @@ function set_settings()
 		);
 	}
 
+	// Remove the redirect...
+	file_put_contents(
+		dirname(__FILE__) . '/Settings.php',
+		preg_replace(
+			'~^if\s*\(file_exists\(dirname\(__FILE__\)\s*\.\s*\'/install\.php\'\)\)\s*(?:({(?'.'>[^{}]|(?1))*})\h*|header(\((?' . '>[^()]|(?2))*\));\n)~m',
+			'',
+			file_get_contents(dirname(__FILE__) . '/Settings.php')
+		)
+	);
+
+
 	$settingsArray = file(dirname(__FILE__) . '/Settings.php');
 	$settings = array();
 	for ($i = 0, $n = count($settingsArray); $i < $n; $i++)
 	{
 		$settingsArray[$i] = rtrim($settingsArray[$i]);
-
-		// Remove the redirect...
-		if ($settingsArray[$i] == 'if (file_exists(dirname(__FILE__) . \'/install.php\'))')
-		{
-			$settingsArray[$i] = '';
-			$settingsArray[$i++] = '';
-			$settingsArray[$i++] = '';
-			$settingsArray[$i++] = '';
-			$settingsArray[$i++] = '';
-			$settingsArray[$i++] = '';
-			continue;
-		}
 
 		if (isset($settingsArray[$i][0]) && $settingsArray[$i][0] != '.' && preg_match('~^[$]([a-zA-Z_]+)\s*=\s*(?:(["\'])(.*?["\'])(?:\\2)?|(.*?)(?:\\2)?);~', $settingsArray[$i], $match) == 1)
 			$settings[$match[1]] = stripslashes($match[3]);
