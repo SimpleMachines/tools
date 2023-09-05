@@ -5,10 +5,10 @@
  *
  * @package fixp
  * @author emanuele
- * @copyright 2011 emanuele, Simple Machines
- * @license http://www.simplemachines.org/about/smf/license.php BSD
+ * @copyright 2023 emanuele, Simple Machines
+ * @license https://www.simplemachines.org/about/smf/license.php BSD
  *
- * @version 0.1
+ * @version 2.1.4
  */
 
 // A nice menu button
